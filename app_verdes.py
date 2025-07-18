@@ -35,12 +35,16 @@ st.markdown('<div class="titulo-renault">RENAULT</div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align: center;'>Controle de Empréstimo - Placa Verde</h1>", unsafe_allow_html=True)
 
 # ----------------- Logo na Sidebar -----------------
-logo_path = r"C:\Users\pm25625\Downloads\logo renault.jpg"
+from PIL import Image
+from urllib.request import urlopen
+
 try:
-    logo = Image.open(logo_path)
-    st.sidebar.image(logo, use_container_width=True)  # Atualizado aqui
+    logo_url = "https://storage.googleapis.com/ire-74774-ope/files%2Fmigration%2Ftb_releases-5238-604.jpg"
+    logo = Image.open(urlopen(logo_url))
+    st.sidebar.image(logo, use_container_width=True)
 except Exception as e:
     st.sidebar.write("Erro ao carregar a logo:", e)
+
 
 # ----------------- Funções Auxiliares -----------------
 CSV_FILE = "emprestimos_placa_verde.csv"
