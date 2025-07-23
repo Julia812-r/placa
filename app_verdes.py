@@ -177,6 +177,28 @@ elif menu_opcao == "Registros de Empréstimos":
 
     df = carregar_dados()
 
+    # Adiciona as colunas se não existirem ainda
+    if "Placa" not in df.columns:
+        df["Placa"] = ""
+    if "Data Devolução Real" not in df.columns:
+        df["Data Devolução Real"] = ""
+
+    # Converte datas para objetos datetime
+    df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
+    df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
+
+    # Define status
+    def calcular_status(row):
+        hoje = datetime.now().date()
+        if pd.notnull(row["Data Devolução Real"]):
+            return "Devolvido"
+        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+            return "Atrasado"
+        else:
+            return "Em aberto"
+
+    df["Status"] = df.apply(calcular_status, axis=1)
+
     # Filtros
     with st.container():
         col1, col2 = st.columns(2)
@@ -186,19 +208,23 @@ elif menu_opcao == "Registros de Empréstimos":
             sv_filtro = st.text_input("Filtrar por SV do Veículo")
 
         if nome_filtro:
-            if "Nome Supervisor" in df.columns:
-                df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            if "SV Veículo" in df.columns:
-                # Substitui NaN por string vazia antes de filtrar
-                sv_col = df["SV Veículo"].fillna("").astype(str)
-                df = df[sv_col.str.contains(sv_filtro, case=False, na=False)]
+            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-
-    # Editor de dados
+    # Mostra tabela com campos editáveis
     st.markdown("### Tabela de Empréstimos")
-    df_editado = st.data_editor(df, num_rows="dynamic", key="editor_emprestimos")
+    df_exibicao = df.copy()
+    df_editavel = st.data_editor(
+        df_exibicao,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="editor_emprestimos",
+        disabled=["Status"],  # Não deixar o status editável manualmente
+    )
 
-    if not df_editado.equals(df):
-        salvar_dados(df_editado)
+    # Verifica se houve alterações
+    if not df_editavel.equals(df):
+        salvar_dados(df_editavel)
         st.success("Alterações salvas com sucesso.")
+
