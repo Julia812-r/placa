@@ -253,6 +253,4 @@ elif menu_opcao == "Registros de Empréstimos":
             cor = ""  # sem cor
         return [cor] * len(row)
 
-    # Exibe tabela com destaque na coluna Status
-    st.markdown("### Visualização com destaque no Status")
-    st.dataframe(edited.style.apply(highlight_status, axis=1), use_container_width=True)
+   
