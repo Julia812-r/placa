@@ -171,23 +171,24 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 adicionar_registro(dados)
                 st.success("Solicitação registrada com sucesso.")
 
-# ----------------- Página: Registros -----------------
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Registros de Empréstimos Realizados")
 
     df = carregar_dados()
 
-    # Adiciona as colunas se não existirem ainda
+    # Adiciona colunas se não existirem
     if "Placa" not in df.columns:
         df["Placa"] = ""
     if "Data Devolução Real" not in df.columns:
         df["Data Devolução Real"] = ""
 
-    # Converte datas para objetos datetime
+    # Converte datas para datetime
     df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
     df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-    # Define status
+    # Calcula status
     def calcular_status(row):
         hoje = datetime.now().date()
         if pd.notnull(row["Data Devolução Real"]):
@@ -212,7 +213,7 @@ elif menu_opcao == "Registros de Empréstimos":
         if sv_filtro:
             df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-    # Organiza colunas na ordem desejada
+    # Organiza colunas
     ordem_colunas = [
         "Status",
         "Previsão Devolução",
@@ -233,31 +234,68 @@ elif menu_opcao == "Registros de Empréstimos":
         "Data Registro",
     ]
 
-    df_exibicao = df[ordem_colunas].copy()
+    df = df[ordem_colunas].copy()
 
-    # Editor de dados editável, mas Status desabilitado para edição
-    df_editavel = st.data_editor(
-        df_exibicao,
-        num_rows="dynamic",
-        use_container_width=True,
-        key="editor_emprestimos",
-        disabled=["Status"],  # Status não editável manualmente
+    # Configura GridOptionsBuilder para controlar edição e cor da coluna Status
+    gb = GridOptionsBuilder.from_dataframe(df)
+
+    # Deixa todas as colunas editáveis (padrão)
+    gb.configure_default_column(editable=True)
+
+    # Desabilita edição na coluna "Status"
+    gb.configure_column("Status", editable=False)
+
+    # Código JS para colorir as células da coluna Status
+    cell_style_jscode = JsCode("""
+    function(params) {
+        if (params.value == 'Devolvido') {
+            return {'color': 'white', 'backgroundColor': '#4CAF50'}; // verde
+        } else if (params.value == 'Atrasado') {
+            return {'color': 'white', 'backgroundColor': '#F44336'}; // vermelho
+        } else if (params.value == 'Em aberto') {
+            return {'color': 'black', 'backgroundColor': '#FFEB3B'}; // amarelo
+        } else {
+            return {};
+        }
+    };
+    """)
+
+    gb.configure_column("Status", cellStyle=cell_style_jscode)
+
+    gridOptions = gb.build()
+
+    # Exibe o AgGrid editável
+    grid_response = AgGrid(
+        df,
+        gridOptions=gridOptions,
+        enable_enterprise_modules=False,
+        update_mode='MODEL_CHANGED',  # atualiza quando algo for alterado
+        allow_unsafe_jscode=True,
+        theme='alpine',
+        height=400,
+        fit_columns_on_grid_load=True,
     )
 
-    # Salva alterações caso tenha sido editado
-    if not df_editavel.equals(df_exibicao):
-        salvar_dados(df_editavel)
+    # Pega o dataframe editado
+    df_editado = grid_response['data']
 
-    # Função para colorir o campo Status
-    def colorir_status(val):
-        if val == "Devolvido":
-            return 'background-color: #90ee90'  # verde claro
-        elif val == "Atrasado":
-            return 'background-color: #ffcccb'  # vermelho claro
-        elif val == "Em aberto":
-            return 'background-color: #ffff99'  # amarelo claro
+    # Recalcula o Status após edição, caso campos que influenciem foram alterados
+    # (Por exemplo, Data Devolução Real ou Previsão Devolução)
+    df_editado["Previsão Devolução"] = pd.to_datetime(df_editado["Previsão Devolução"], errors='coerce')
+    df_editado["Data Devolução Real"] = pd.to_datetime(df_editado["Data Devolução Real"], errors='coerce')
+
+    def recalcula_status(row):
+        hoje = datetime.now().date()
+        if pd.notnull(row["Data Devolução Real"]):
+            return "Devolvido"
+        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+            return "Atrasado"
         else:
-            return ''
+            return "Em aberto"
 
-    st.markdown("### Visualização do Status com Cores")
-    st.dataframe(df_editavel.style.applymap(colorir_status, subset=['Status']))
+    df_editado["Status"] = df_editado.apply(recalcula_status, axis=1)
+
+    # Salva dados atualizados no CSV
+    salvar_dados(df_editado)
+
+    st.success("Registros atualizados com sucesso!")
