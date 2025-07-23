@@ -177,28 +177,6 @@ elif menu_opcao == "Registros de Empréstimos":
 
     df = carregar_dados()
 
-    # Adiciona as colunas se não existirem ainda
-    if "Placa" not in df.columns:
-        df["Placa"] = ""
-    if "Data Devolução Real" not in df.columns:
-        df["Data Devolução Real"] = ""
-
-    # Converte datas para objetos datetime
-    df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
-    df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
-
-    # Define status
-    def calcular_status(row):
-        hoje = datetime.now().date()
-        if pd.notnull(row["Data Devolução Real"]):
-            return "Devolvido"
-        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
-            return "Atrasado"
-        else:
-            return "Em aberto"
-
-    df["Status"] = df.apply(calcular_status, axis=1)
-
     # Filtros
     with st.container():
         col1, col2 = st.columns(2)
@@ -208,50 +186,19 @@ elif menu_opcao == "Registros de Empréstimos":
             sv_filtro = st.text_input("Filtrar por SV do Veículo")
 
         if nome_filtro:
-            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+            if "Nome Supervisor" in df.columns:
+                df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+            if "SV Veículo" in df.columns:
+                # Substitui NaN por string vazia antes de filtrar
+                sv_col = df["SV Veículo"].fillna("").astype(str)
+                df = df[sv_col.str.contains(sv_filtro, case=False, na=False)]
 
-    # Mostra tabela com campos editáveis
-    from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
-from st_aggrid.shared import GridUpdateMode
 
-# Prepara dados editáveis
-df_exibicao = df.copy()
+    # Editor de dados
+    st.markdown("### Tabela de Empréstimos")
+    df_editado = st.data_editor(df, num_rows="dynamic", key="editor_emprestimos")
 
-# Define coloração da coluna Status
-status_cor_js = JsCode("""
-function(params) {
-    if (params.value == 'Atrasado') {
-        return { 'color': 'white', 'backgroundColor': 'red' };
-    } else if (params.value == 'Devolvido') {
-        return { 'color': 'white', 'backgroundColor': 'green' };
-    } else if (params.value == 'Em aberto') {
-        return { 'color': 'black', 'backgroundColor': 'orange' };
-    }
-}
-""")
-
-# Configura grid editável com destaque no Status
-gb = GridOptionsBuilder.from_dataframe(df_exibicao)
-gb.configure_columns(["Placa", "Data Devolução Real"], editable=True)
-gb.configure_column("Status", cellStyle=status_cor_js, editable=False)
-grid_options = gb.build()
-
-st.markdown("### Tabela de Empréstimos com Edição e Status Colorido")
-grid_response = AgGrid(
-    df_exibicao,
-    gridOptions=grid_options,
-    update_mode=GridUpdateMode.MODEL_CHANGED,
-    fit_columns_on_grid_load=True,
-    allow_unsafe_jscode=True,
-    enable_enterprise_modules=False
-)
-
-# Pega o dataframe editado
-df_editado = grid_response["data"]
-
-# Salva alterações, se houver
-if not df_editado.equals(df):
-    salvar_dados(df_editado)
-    st.success("Alterações salvas com sucesso.")
+    if not df_editado.equals(df):
+        salvar_dados(df_editado)
+        st.success("Alterações salvas com sucesso.")   
