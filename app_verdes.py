@@ -172,7 +172,6 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Registros de Empréstimos Realizados")
 
@@ -213,11 +212,7 @@ elif menu_opcao == "Registros de Empréstimos":
         if sv_filtro:
             df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-    # Mostra tabela com campos editáveis
-    st.markdown("### Tabela de Empréstimos")
-    df_exibicao = df.copy()
-
-    # Reorganiza colunas na ordem desejada
+    # Organiza colunas na ordem desejada
     ordem_colunas = [
         "Status",
         "Previsão Devolução",
@@ -238,8 +233,9 @@ elif menu_opcao == "Registros de Empréstimos":
         "Data Registro",
     ]
 
-    df_exibicao = df_exibicao[ordem_colunas]
+    df_exibicao = df[ordem_colunas].copy()
 
+    # Editor de dados editável, mas Status desabilitado para edição
     df_editavel = st.data_editor(
         df_exibicao,
         num_rows="dynamic",
@@ -248,7 +244,20 @@ elif menu_opcao == "Registros de Empréstimos":
         disabled=["Status"],  # Status não editável manualmente
     )
 
-
-    # Verifica se houve alterações
-    if not df_editavel.equals(df):
+    # Salva alterações caso tenha sido editado
+    if not df_editavel.equals(df_exibicao):
         salvar_dados(df_editavel)
+
+    # Função para colorir o campo Status
+    def colorir_status(val):
+        if val == "Devolvido":
+            return 'background-color: #90ee90'  # verde claro
+        elif val == "Atrasado":
+            return 'background-color: #ffcccb'  # vermelho claro
+        elif val == "Em aberto":
+            return 'background-color: #ffff99'  # amarelo claro
+        else:
+            return ''
+
+    st.markdown("### Visualização do Status com Cores")
+    st.dataframe(df_editavel.style.applymap(colorir_status, subset=['Status']))
