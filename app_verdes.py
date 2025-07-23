@@ -177,6 +177,35 @@ elif menu_opcao == "Registros de Empréstimos":
 
     df = carregar_dados()
 
+    # Garante que as colunas novas existem no DataFrame
+    for col in ["Placa", "Data Devolução Real"]:
+        if col not in df.columns:
+            df[col] = ""
+
+    # Gera coluna de status automaticamente
+    status_lista = []
+    hoje = datetime.now().date()
+
+    for idx, row in df.iterrows():
+        previsao_str = row.get("Previsão Devolução", "")
+        devolucao_real = row.get("Data Devolução Real", "").strip()
+
+        try:
+            previsao = datetime.strptime(previsao_str, "%d/%m/%Y").date()
+        except:
+            previsao = None
+
+        if devolucao_real:
+            status = "Devolvido"
+        elif previsao and hoje > previsao:
+            status = "Atrasado"
+        else:
+            status = "Em aberto"
+
+        status_lista.append(status)
+
+    df["Status"] = status_lista
+
     # Filtros
     with st.container():
         col1, col2 = st.columns(2)
@@ -186,19 +215,27 @@ elif menu_opcao == "Registros de Empréstimos":
             sv_filtro = st.text_input("Filtrar por SV do Veículo")
 
         if nome_filtro:
-            if "Nome Supervisor" in df.columns:
-                df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            if "SV Veículo" in df.columns:
-                # Substitui NaN por string vazia antes de filtrar
-                sv_col = df["SV Veículo"].fillna("").astype(str)
-                df = df[sv_col.str.contains(sv_filtro, case=False, na=False)]
+            sv_col = df["SV Veículo"].fillna("").astype(str)
+            df = df[sv_col.str.contains(sv_filtro, case=False, na=False)]
 
-
-    # Editor de dados
+    # Editor de dados com Placa e Devolução Real editáveis
     st.markdown("### Tabela de Empréstimos")
-    df_editado = st.data_editor(df, num_rows="dynamic", key="editor_emprestimos")
+    df_exibicao = df.copy()
 
-    if not df_editado.equals(df):
-        salvar_dados(df_editado)
-        st.success("Alterações salvas com sucesso.")   
+    # Define colunas editáveis (Placa e Data Devolução Real)
+    edited = st.data_editor(
+        df_exibicao,
+        num_rows="dynamic",
+        column_config={
+            "Placa": st.column_config.TextColumn("Placa"),
+            "Data Devolução Real": st.column_config.TextColumn("Data Devolução Real (dd/mm/aaaa)")
+        },
+        use_container_width=True,
+        key="editor_emprestimos"
+    )
+
+    if not edited.equals(df):
+        salvar_dados(edited)
+        st.success("Alterações salvas com sucesso.")
