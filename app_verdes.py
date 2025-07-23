@@ -221,23 +221,27 @@ elif menu_opcao == "Registros de Empréstimos":
         use_container_width=True,
         key="editor_emprestimos",
         disabled=["Status"],  # Não deixar o status editável manualmente
-
-     # Aplica estilo condicional à coluna "Status"
-     def colorir_status(val):
-         if val == "Atrasado":
-            return "color: white; background-color: red;"
-         elif val == "Devolvido":
-             return "color: white; background-color: green;"
-         elif val == "Em aberto":
-             return "color: black; background-color: orange;"
-         return ""
-
-     # Exibe a tabela formatada (apenas visualização, não editável)
-     st.markdown("### Tabela com Status Colorido")
-     tabela_estilizada = df_editavel.style.applymap(colorir_status, subset=["Status"])
-     st.dataframe(tabela_estilizada, use_container_width=True)
-
     )
+
+    # Salva se houver alterações
+    if not df_editavel.equals(df):
+        salvar_dados(df_editavel)
+        st.success("Alterações salvas com sucesso.")
+
+    # Aplica estilo condicional à coluna "Status"
+    def colorir_status(val):
+        if val == "Atrasado":
+           return "color: white; background-color: red;"
+        elif val == "Devolvido":
+            return "color: white; background-color: green;"
+        elif val == "Em aberto":
+            return "color: black; background-color: orange;"
+        return ""
+
+    # Exibe a tabela formatada (apenas visualização, não editável)
+    st.markdown("### Tabela com Status Colorido")
+    tabela_estilizada = df_editavel.style.applymap(colorir_status, subset=["Status"])
+    st.dataframe(tabela_estilizada, use_container_width=True)
 
     # Verifica se houve alterações
     if not df_editavel.equals(df):
