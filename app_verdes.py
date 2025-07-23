@@ -202,16 +202,23 @@ elif menu_opcao == "Registros de Empréstimos":
 
     # Filtros
     with st.container():
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns([3, 3, 2])
         with col1:
             nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
         with col2:
             sv_filtro = st.text_input("Filtrar por SV do Veículo")
+        with col3:
+            status_opcoes = df["Status"].unique().tolist()
+            status_filtro = st.multiselect("Filtrar por Status", options=status_opcoes, default=status_opcoes)
 
-        if nome_filtro:
-            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
-        if sv_filtro:
-            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+    # Aplica filtros
+    if nome_filtro:
+        df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+    if sv_filtro:
+        df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+    if status_filtro:
+        df = df[df["Status"].isin(status_filtro)]
+
 
     # Mostra tabela com campos editáveis
     st.markdown("### Tabela de Empréstimos")
