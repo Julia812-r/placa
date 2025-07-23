@@ -204,7 +204,6 @@ elif menu_opcao == "Registros de Empréstimos":
 
         status_lista.append(status)
 
-
     df["Status"] = status_lista
 
     # Filtros
@@ -221,11 +220,12 @@ elif menu_opcao == "Registros de Empréstimos":
             sv_col = df["SV Veículo"].fillna("").astype(str)
             df = df[sv_col.str.contains(sv_filtro, case=False, na=False)]
 
-    # Editor de dados com Placa e Devolução Real editáveis
-    st.markdown("### Tabela de Empréstimos")
+    # Garante que os tipos das colunas editáveis sejam strings
     df_exibicao = df.copy()
+    df_exibicao["Placa"] = df_exibicao["Placa"].astype(str)
+    df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].astype(str)
 
-    # Define colunas editáveis (Placa e Data Devolução Real)
+    # Editor de dados (permitindo editar Placa e Data Devolução Real)
     edited = st.data_editor(
         df_exibicao,
         num_rows="dynamic",
@@ -237,6 +237,22 @@ elif menu_opcao == "Registros de Empréstimos":
         key="editor_emprestimos"
     )
 
+    # Salva alterações e atualiza status automaticamente
     if not edited.equals(df):
         salvar_dados(edited)
         st.success("Alterações salvas com sucesso.")
+
+    # Recalcula status para o DataFrame editado para exibir com estilo
+    def highlight_status(row):
+        cor = ""
+        if row["Status"] == "Atrasado":
+            cor = "background-color: #ffcccc"  # vermelho claro
+        elif row["Status"] == "Devolvido":
+            cor = "background-color: #ccffcc"  # verde claro
+        else:
+            cor = ""  # sem cor
+        return [cor] * len(row)
+
+    # Exibe tabela com destaque na coluna Status
+    st.markdown("### Visualização com destaque no Status")
+    st.dataframe(edited.style.apply(highlight_status, axis=1), use_container_width=True)
