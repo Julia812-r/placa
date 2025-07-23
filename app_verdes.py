@@ -172,6 +172,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
+# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Registros de Empréstimos Realizados")
 
@@ -215,12 +216,36 @@ elif menu_opcao == "Registros de Empréstimos":
     # Mostra tabela com campos editáveis
     st.markdown("### Tabela de Empréstimos")
     df_exibicao = df.copy()
+
+    # Reorganiza colunas na ordem desejada
+    ordem_colunas = [
+        "Status",
+        "Previsão Devolução",
+        "Data Devolução Real",
+        "Nome Supervisor",
+        "Email",
+        "Departamento",
+        "Telefone",
+        "CNH",
+        "Validade CNH",
+        "Motivo",
+        "Declaração Lida",
+        "GoodCard",
+        "SV Veículo",
+        "Placa",
+        "Pernoite",
+        "Projeto",
+        "Data Registro",
+    ]
+
+    df_exibicao = df_exibicao[ordem_colunas]
+
     df_editavel = st.data_editor(
         df_exibicao,
         num_rows="dynamic",
         use_container_width=True,
         key="editor_emprestimos",
-        disabled=["Status"],  # Não deixar o status editável manualmente
+        disabled=["Status"],  # Status não editável manualmente
     )
 
     # Verifica se houve alterações
