@@ -172,84 +172,140 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-# ----------------- Página: Registros -----------------
-elif menu_opcao == "Registros de Empréstimos":
-    st.subheader("Registros de Empréstimos Realizados")
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+import pandas as pd
+from datetime import datetime
+import streamlit as st
 
-    df = carregar_dados()
+# Função que você já tem para carregar os dados
+def carregar_dados():
+    import os
+    CSV_FILE = "emprestimos_placa_verde.csv"
+    if os.path.exists(CSV_FILE):
+        return pd.read_csv(CSV_FILE)
+    else:
+        return pd.DataFrame(columns=[
+            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
+            "Motivo", "Previsão Devolução", "Declaração Lida",
+            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
+        ])
 
-    # Adiciona as colunas se não existirem ainda
-    if "Placa" not in df.columns:
-        df["Placa"] = ""
-    if "Data Devolução Real" not in df.columns:
-        df["Data Devolução Real"] = ""
+# Função para salvar dados
+def salvar_dados(df):
+    CSV_FILE = "emprestimos_placa_verde.csv"
+    df.to_csv(CSV_FILE, index=False)
 
-    # Converte datas para objetos datetime
-    df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
-    df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
+# Carrega os dados
+df = carregar_dados()
 
-    # Define status
-    def calcular_status(row):
-        hoje = datetime.now().date()
-        if pd.notnull(row["Data Devolução Real"]):
-            return "Devolvido"
-        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
-            return "Atrasado"
-        else:
-            return "Em aberto"
+# Cria colunas extras se não existirem
+if "Placa" not in df.columns:
+    df["Placa"] = ""
+if "Data Devolução Real" not in df.columns:
+    df["Data Devolução Real"] = ""
 
-    df["Status"] = df.apply(calcular_status, axis=1)
+# Converte colunas de datas para datetime
+df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
+df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-    # Filtros
-    with st.container():
-        col1, col2 = st.columns(2)
-        with col1:
-            nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
-        with col2:
-            sv_filtro = st.text_input("Filtrar por SV do Veículo")
+# Função para calcular status
+def calcular_status(row):
+    hoje = datetime.now().date()
+    if pd.notnull(row["Data Devolução Real"]):
+        return "Devolvido"
+    elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+        return "Atrasado"
+    else:
+        return "Em aberto"
 
-        if nome_filtro:
-            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
-        if sv_filtro:
-            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+df["Status"] = df.apply(calcular_status, axis=1)
 
-    # Mostra tabela com campos editáveis
-    st.markdown("### Tabela de Empréstimos")
-    df_exibicao = df.copy()
+# Filtragem
+col1, col2 = st.columns(2)
+with col1:
+    nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
+with col2:
+    sv_filtro = st.text_input("Filtrar por SV do Veículo")
 
-    # Reorganiza colunas na ordem desejada
-    ordem_colunas = [
-        "Status",
-        "Previsão Devolução",
-        "Data Devolução Real",
-        "Nome Supervisor",
-        "Email",
-        "Departamento",
-        "Telefone",
-        "CNH",
-        "Validade CNH",
-        "Motivo",
-        "Declaração Lida",
-        "GoodCard",
-        "SV Veículo",
-        "Placa",
-        "Pernoite",
-        "Projeto",
-        "Data Registro",
-    ]
+df_exibicao = df.copy()
 
-    df_exibicao = df_exibicao[ordem_colunas]
+if nome_filtro:
+    df_exibicao = df_exibicao[df_exibicao["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+if sv_filtro:
+    df_exibicao = df_exibicao[df_exibicao["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-    df_editavel = st.data_editor(
-        df_exibicao,
-        num_rows="dynamic",
-        use_container_width=True,
-        key="editor_emprestimos",
-        disabled=["Status"],  # Status não editável manualmente
-    )
+# Ordena as colunas na ordem desejada
+ordem_colunas = [
+    "Status",
+    "Previsão Devolução",
+    "Data Devolução Real",
+    "Nome Supervisor",
+    "Email",
+    "Departamento",
+    "Telefone",
+    "CNH",
+    "Validade CNH",
+    "Motivo",
+    "Declaração Lida",
+    "GoodCard",
+    "SV Veículo",
+    "Placa",
+    "Pernoite",
+    "Projeto",
+    "Data Registro",
+]
 
+df_exibicao = df_exibicao[ordem_colunas]
 
-    # Verifica se houve alterações
-    if not df_editavel.equals(df):
-        salvar_dados(df_editavel)
-   
+st.markdown("### Tabela de Empréstimos")
+
+# Código JS para colorir célula Status
+cell_style_jscode = JsCode("""
+function(params) {
+    if (params.value == 'Devolvido') {
+        return {
+            'color': 'black',
+            'backgroundColor': '#d4edda',
+            'fontWeight': 'bold'
+        }
+    } else if (params.value == 'Atrasado') {
+        return {
+            'color': 'black',
+            'backgroundColor': '#f8d7da',
+            'fontWeight': 'bold'
+        }
+    } else if (params.value == 'Em aberto') {
+        return {
+            'color': 'black',
+            'backgroundColor': '#fff3cd',
+            'fontWeight': 'bold'
+        }
+    }
+    return {}
+}
+""")
+
+# Configurações do grid
+gb = GridOptionsBuilder.from_dataframe(df_exibicao)
+gb.configure_default_column(editable=True)
+gb.configure_column("Status", editable=False, cellStyle=cell_style_jscode)
+grid_options = gb.build()
+
+# Exibe a tabela com AgGrid
+grid_response = AgGrid(
+    df_exibicao,
+    gridOptions=grid_options,
+    enable_enterprise_modules=False,
+    update_mode="MODEL_CHANGED",
+    allow_unsafe_jscode=True,
+    fit_columns_on_grid_load=True,
+    theme="streamlit",
+    height=400,
+)
+
+df_editavel = pd.DataFrame(grid_response['data'])
+
+# Salva alterações no CSV se houve mudança
+if not df_editavel.equals(df_exibicao):
+    salvar_dados(df_editavel)
+    st.success("Registros atualizados com sucesso!")
