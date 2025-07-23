@@ -172,116 +172,84 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-import streamlit as st
-import pandas as pd
-from datetime import datetime
+# ----------------- Página: Registros -----------------
+elif menu_opcao == "Registros de Empréstimos":
+    st.subheader("Registros de Empréstimos Realizados")
 
-# Funções para carregar e salvar dados
-import os
-CSV_FILE = "emprestimos_placa_verde.csv"
+    df = carregar_dados()
 
-def carregar_dados():
-    if os.path.exists(CSV_FILE):
-        return pd.read_csv(CSV_FILE)
-    else:
-        return pd.DataFrame(columns=[
-            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
-            "Motivo", "Previsão Devolução", "Declaração Lida",
-            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
-        ])
+    # Adiciona as colunas se não existirem ainda
+    if "Placa" not in df.columns:
+        df["Placa"] = ""
+    if "Data Devolução Real" not in df.columns:
+        df["Data Devolução Real"] = ""
 
-def salvar_dados(df):
-    df.to_csv(CSV_FILE, index=False)
+    # Converte datas para objetos datetime
+    df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
+    df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-# Carrega dados
-df = carregar_dados()
+    # Define status
+    def calcular_status(row):
+        hoje = datetime.now().date()
+        if pd.notnull(row["Data Devolução Real"]):
+            return "Devolvido"
+        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+            return "Atrasado"
+        else:
+            return "Em aberto"
 
-# Garante colunas extras
-if "Placa" not in df.columns:
-    df["Placa"] = ""
-if "Data Devolução Real" not in df.columns:
-    df["Data Devolução Real"] = ""
+    df["Status"] = df.apply(calcular_status, axis=1)
 
-# Converte datas
-df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
-df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
+    # Filtros
+    with st.container():
+        col1, col2 = st.columns(2)
+        with col1:
+            nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
+        with col2:
+            sv_filtro = st.text_input("Filtrar por SV do Veículo")
 
-# Calcula status
-def calcular_status(row):
-    hoje = datetime.now().date()
-    if pd.notnull(row["Data Devolução Real"]):
-        return "Devolvido"
-    elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
-        return "Atrasado"
-    else:
-        return "Em aberto"
+        if nome_filtro:
+            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+        if sv_filtro:
+            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-df["Status"] = df.apply(calcular_status, axis=1)
+    # Mostra tabela com campos editáveis
+    st.markdown("### Tabela de Empréstimos")
+    df_exibicao = df.copy()
 
-# Filtros
-col1, col2 = st.columns(2)
-with col1:
-    nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
-with col2:
-    sv_filtro = st.text_input("Filtrar por SV do Veículo")
+    # Reorganiza colunas na ordem desejada
+    ordem_colunas = [
+        "Status",
+        "Previsão Devolução",
+        "Data Devolução Real",
+        "Nome Supervisor",
+        "Email",
+        "Departamento",
+        "Telefone",
+        "CNH",
+        "Validade CNH",
+        "Motivo",
+        "Declaração Lida",
+        "GoodCard",
+        "SV Veículo",
+        "Placa",
+        "Pernoite",
+        "Projeto",
+        "Data Registro",
+    ]
 
-df_exibicao = df.copy()
+    df_exibicao = df_exibicao[ordem_colunas]
 
-if nome_filtro:
-    df_exibicao = df_exibicao[df_exibicao["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
-if sv_filtro:
-    df_exibicao = df_exibicao[df_exibicao["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+    df_editavel = st.data_editor(
+        df_exibicao,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="editor_emprestimos",
+        disabled=["Status"],  # Status não editável manualmente
+    )
 
-# Reordena colunas
-ordem_colunas = [
-    "Status",
-    "Previsão Devolução",
-    "Data Devolução Real",
-    "Nome Supervisor",
-    "Email",
-    "Departamento",
-    "Telefone",
-    "CNH",
-    "Validade CNH",
-    "Motivo",
-    "Declaração Lida",
-    "GoodCard",
-    "SV Veículo",
-    "Placa",
-    "Pernoite",
-    "Projeto",
-    "Data Registro",
-]
 
-df_exibicao = df_exibicao[ordem_colunas]
-
-# Tabela editável (sem cores)
-st.markdown("### Tabela editável (sem cores)")
-df_editavel = st.data_editor(
-    df_exibicao,
-    num_rows="dynamic",
-    use_container_width=True,
-    key="editor_emprestimos",
-    disabled=["Status"],  # Status não editável
-)
-
-if not df_editavel.equals(df_exibicao):
-    salvar_dados(df_editavel)
-    st.success("Registros atualizados com sucesso!")
-
-# Função para colorir linha conforme status
-def colorir_linhas(row):
-    status = row["Status"]
-    if status == "Devolvido":
-        cor = 'background-color: #d4edda'  # verde claro
-    elif status == "Atrasado":
-        cor = 'background-color: #f8d7da'  # vermelho claro
-    elif status == "Em aberto":
-        cor = 'background-color: #fff3cd'  # amarelo claro
-    else:
-        cor = ''
-    return [cor] * len(row)
-
-# Tabela só leitura com cor na linha inteira para status
-st.markdown("### Visualização colorida do Status (somente leitura)")
-st.dataframe(df_editavel.style.apply(colorir_linhas, axis=1), use_container_width=True)
+    # Verifica se houve alterações
+    if not df_editavel.equals(df):
+        salvar_dados(df_editavel)
+       quando for devolvido quero que fique verde, atrasado vermelho, em aberto amarelo
