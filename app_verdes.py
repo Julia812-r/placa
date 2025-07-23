@@ -188,7 +188,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
     for idx, row in df.iterrows():
         previsao_str = row.get("Previsão Devolução", "")
-        devolucao_real = row.get("Data Devolução Real", "").strip()
+        devolucao_real = str(row.get("Data Devolução Real", "") or "").strip()
 
         try:
             previsao = datetime.strptime(previsao_str, "%d/%m/%Y").date()
@@ -203,6 +203,7 @@ elif menu_opcao == "Registros de Empréstimos":
             status = "Em aberto"
 
         status_lista.append(status)
+
 
     df["Status"] = status_lista
 
