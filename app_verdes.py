@@ -252,4 +252,3 @@ elif menu_opcao == "Registros de Empréstimos":
     # Verifica se houve alterações
     if not df_editavel.equals(df):
         salvar_dados(df_editavel)
-       quando for devolvido quero que fique verde, atrasado vermelho, em aberto amarelo
