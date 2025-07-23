@@ -213,38 +213,45 @@ elif menu_opcao == "Registros de Empréstimos":
             df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
     # Mostra tabela com campos editáveis
-    st.markdown("### Tabela de Empréstimos")
-    df_exibicao = df.copy()
-    df_editavel = st.data_editor(
-        df_exibicao,
-        num_rows="dynamic",
-        use_container_width=True,
-        key="editor_emprestimos",
-        disabled=["Status"],  # Não deixar o status editável manualmente
-    )
+    from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+from st_aggrid.shared import GridUpdateMode
 
-    # Salva se houver alterações
-    if not df_editavel.equals(df):
-        salvar_dados(df_editavel)
-        st.success("Alterações salvas com sucesso.")
+# Prepara dados editáveis
+df_exibicao = df.copy()
 
-    # Aplica estilo condicional à coluna "Status"
-    def colorir_status(val):
-        if val == "Atrasado":
-           return "color: white; background-color: red;"
-        elif val == "Devolvido":
-            return "color: white; background-color: green;"
-        elif val == "Em aberto":
-            return "color: black; background-color: orange;"
-        return ""
+# Define coloração da coluna Status
+status_cor_js = JsCode("""
+function(params) {
+    if (params.value == 'Atrasado') {
+        return { 'color': 'white', 'backgroundColor': 'red' };
+    } else if (params.value == 'Devolvido') {
+        return { 'color': 'white', 'backgroundColor': 'green' };
+    } else if (params.value == 'Em aberto') {
+        return { 'color': 'black', 'backgroundColor': 'orange' };
+    }
+}
+""")
 
-    # Exibe a tabela formatada (apenas visualização, não editável)
-    st.markdown("### Tabela com Status Colorido")
-    tabela_estilizada = df_editavel.style.applymap(colorir_status, subset=["Status"])
-    st.dataframe(tabela_estilizada, use_container_width=True)
+# Configura grid editável com destaque no Status
+gb = GridOptionsBuilder.from_dataframe(df_exibicao)
+gb.configure_columns(["Placa", "Data Devolução Real"], editable=True)
+gb.configure_column("Status", cellStyle=status_cor_js, editable=False)
+grid_options = gb.build()
 
-    # Verifica se houve alterações
-    if not df_editavel.equals(df):
-        salvar_dados(df_editavel)
-        st.success("Alterações salvas com sucesso.")
+st.markdown("### Tabela de Empréstimos com Edição e Status Colorido")
+grid_response = AgGrid(
+    df_exibicao,
+    gridOptions=grid_options,
+    update_mode=GridUpdateMode.MODEL_CHANGED,
+    fit_columns_on_grid_load=True,
+    allow_unsafe_jscode=True,
+    enable_enterprise_modules=False
+)
 
+# Pega o dataframe editado
+df_editado = grid_response["data"]
+
+# Salva alterações, se houver
+if not df_editado.equals(df):
+    salvar_dados(df_editado)
+    st.success("Alterações salvas com sucesso.")
