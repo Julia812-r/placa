@@ -172,15 +172,15 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+import streamlit as st
 import pandas as pd
 from datetime import datetime
-import streamlit as st
 
-# Função que você já tem para carregar os dados
+# Funções para carregar e salvar dados
+import os
+CSV_FILE = "emprestimos_placa_verde.csv"
+
 def carregar_dados():
-    import os
-    CSV_FILE = "emprestimos_placa_verde.csv"
     if os.path.exists(CSV_FILE):
         return pd.read_csv(CSV_FILE)
     else:
@@ -190,25 +190,23 @@ def carregar_dados():
             "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
         ])
 
-# Função para salvar dados
 def salvar_dados(df):
-    CSV_FILE = "emprestimos_placa_verde.csv"
     df.to_csv(CSV_FILE, index=False)
 
-# Carrega os dados
+# Carrega dados
 df = carregar_dados()
 
-# Cria colunas extras se não existirem
+# Garante colunas extras
 if "Placa" not in df.columns:
     df["Placa"] = ""
 if "Data Devolução Real" not in df.columns:
     df["Data Devolução Real"] = ""
 
-# Converte colunas de datas para datetime
+# Converte datas
 df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
 df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-# Função para calcular status
+# Calcula status
 def calcular_status(row):
     hoje = datetime.now().date()
     if pd.notnull(row["Data Devolução Real"]):
@@ -220,7 +218,7 @@ def calcular_status(row):
 
 df["Status"] = df.apply(calcular_status, axis=1)
 
-# Filtragem
+# Filtros
 col1, col2 = st.columns(2)
 with col1:
     nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
@@ -234,7 +232,7 @@ if nome_filtro:
 if sv_filtro:
     df_exibicao = df_exibicao[df_exibicao["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-# Ordena as colunas na ordem desejada
+# Reordena colunas
 ordem_colunas = [
     "Status",
     "Previsão Devolução",
@@ -257,55 +255,33 @@ ordem_colunas = [
 
 df_exibicao = df_exibicao[ordem_colunas]
 
-st.markdown("### Tabela de Empréstimos")
-
-# Código JS para colorir célula Status
-cell_style_jscode = JsCode("""
-function(params) {
-    if (params.value == 'Devolvido') {
-        return {
-            'color': 'black',
-            'backgroundColor': '#d4edda',
-            'fontWeight': 'bold'
-        }
-    } else if (params.value == 'Atrasado') {
-        return {
-            'color': 'black',
-            'backgroundColor': '#f8d7da',
-            'fontWeight': 'bold'
-        }
-    } else if (params.value == 'Em aberto') {
-        return {
-            'color': 'black',
-            'backgroundColor': '#fff3cd',
-            'fontWeight': 'bold'
-        }
-    }
-    return {}
-}
-""")
-
-# Configurações do grid
-gb = GridOptionsBuilder.from_dataframe(df_exibicao)
-gb.configure_default_column(editable=True)
-gb.configure_column("Status", editable=False, cellStyle=cell_style_jscode)
-grid_options = gb.build()
-
-# Exibe a tabela com AgGrid
-grid_response = AgGrid(
+# Tabela editável (sem cores)
+st.markdown("### Tabela editável (sem cores)")
+df_editavel = st.data_editor(
     df_exibicao,
-    gridOptions=grid_options,
-    enable_enterprise_modules=False,
-    update_mode="MODEL_CHANGED",
-    allow_unsafe_jscode=True,
-    fit_columns_on_grid_load=True,
-    theme="streamlit",
-    height=400,
+    num_rows="dynamic",
+    use_container_width=True,
+    key="editor_emprestimos",
+    disabled=["Status"],  # Status não editável
 )
 
-df_editavel = pd.DataFrame(grid_response['data'])
-
-# Salva alterações no CSV se houve mudança
 if not df_editavel.equals(df_exibicao):
     salvar_dados(df_editavel)
     st.success("Registros atualizados com sucesso!")
+
+# Função para colorir linha conforme status
+def colorir_linhas(row):
+    status = row["Status"]
+    if status == "Devolvido":
+        cor = 'background-color: #d4edda'  # verde claro
+    elif status == "Atrasado":
+        cor = 'background-color: #f8d7da'  # vermelho claro
+    elif status == "Em aberto":
+        cor = 'background-color: #fff3cd'  # amarelo claro
+    else:
+        cor = ''
+    return [cor] * len(row)
+
+# Tabela só leitura com cor na linha inteira para status
+st.markdown("### Visualização colorida do Status (somente leitura)")
+st.dataframe(df_editavel.style.apply(colorir_linhas, axis=1), use_container_width=True)
