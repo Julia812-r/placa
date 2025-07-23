@@ -172,8 +172,11 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+import pandas as pd
+from datetime import datetime
+import streamlit as st
 
-elif menu_opcao == "Registros de Empréstimos":
+def aba_registros():
     st.subheader("Registros de Empréstimos Realizados")
 
     df = carregar_dados()
@@ -280,7 +283,6 @@ elif menu_opcao == "Registros de Empréstimos":
     df_editado = grid_response['data']
 
     # Recalcula o Status após edição, caso campos que influenciem foram alterados
-    # (Por exemplo, Data Devolução Real ou Previsão Devolução)
     df_editado["Previsão Devolução"] = pd.to_datetime(df_editado["Previsão Devolução"], errors='coerce')
     df_editado["Data Devolução Real"] = pd.to_datetime(df_editado["Data Devolução Real"], errors='coerce')
 
