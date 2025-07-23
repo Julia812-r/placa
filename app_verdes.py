@@ -177,34 +177,27 @@ elif menu_opcao == "Registros de Empréstimos":
 
     df = carregar_dados()
 
-    # Garante que as colunas novas existem no DataFrame
-    for col in ["Placa", "Data Devolução Real"]:
-        if col not in df.columns:
-            df[col] = ""
+    # Adiciona as colunas se não existirem ainda
+    if "Placa" not in df.columns:
+        df["Placa"] = ""
+    if "Data Devolução Real" not in df.columns:
+        df["Data Devolução Real"] = ""
 
-    # Gera coluna de status automaticamente
-    status_lista = []
-    hoje = datetime.now().date()
+    # Converte datas para objetos datetime
+    df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
+    df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-    for idx, row in df.iterrows():
-        previsao_str = row.get("Previsão Devolução", "")
-        devolucao_real = str(row.get("Data Devolução Real", "") or "").strip()
-
-        try:
-            previsao = datetime.strptime(previsao_str, "%d/%m/%Y").date()
-        except:
-            previsao = None
-
-        if devolucao_real:
-            status = "Devolvido"
-        elif previsao and hoje > previsao:
-            status = "Atrasado"
+    # Define status
+    def calcular_status(row):
+        hoje = datetime.now().date()
+        if pd.notnull(row["Data Devolução Real"]):
+            return "Devolvido"
+        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+            return "Atrasado"
         else:
-            status = "Em aberto"
+            return "Em aberto"
 
-        status_lista.append(status)
-
-    df["Status"] = status_lista
+    df["Status"] = df.apply(calcular_status, axis=1)
 
     # Filtros
     with st.container():
@@ -217,40 +210,20 @@ elif menu_opcao == "Registros de Empréstimos":
         if nome_filtro:
             df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            sv_col = df["SV Veículo"].fillna("").astype(str)
-            df = df[sv_col.str.contains(sv_filtro, case=False, na=False)]
+            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
 
-    # Garante que os tipos das colunas editáveis sejam strings
+    # Mostra tabela com campos editáveis
+    st.markdown("### Tabela de Empréstimos")
     df_exibicao = df.copy()
-    df_exibicao["Placa"] = df_exibicao["Placa"].astype(str)
-    df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].astype(str)
-
-    # Editor de dados (permitindo editar Placa e Data Devolução Real)
-    edited = st.data_editor(
+    df_editavel = st.data_editor(
         df_exibicao,
         num_rows="dynamic",
-        column_config={
-            "Placa": st.column_config.TextColumn("Placa"),
-            "Data Devolução Real": st.column_config.TextColumn("Data Devolução Real (dd/mm/aaaa)")
-        },
         use_container_width=True,
-        key="editor_emprestimos"
+        key="editor_emprestimos",
+        disabled=["Status"],  # Não deixar o status editável manualmente
     )
 
-    # Salva alterações e atualiza status automaticamente
-    if not edited.equals(df):
-        salvar_dados(edited)
+    # Verifica se houve alterações
+    if not df_editavel.equals(df):
+        salvar_dados(df_editavel)
         st.success("Alterações salvas com sucesso.")
-
-    # Recalcula status para o DataFrame editado para exibir com estilo
-    def highlight_status(row):
-        cor = ""
-        if row["Status"] == "Atrasado":
-            cor = "background-color: #ffcccc"  # vermelho claro
-        elif row["Status"] == "Devolvido":
-            cor = "background-color: #ccffcc"  # verde claro
-        else:
-            cor = ""  # sem cor
-        return [cor] * len(row)
-
-   
