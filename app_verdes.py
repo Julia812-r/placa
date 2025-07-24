@@ -172,7 +172,6 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
 
