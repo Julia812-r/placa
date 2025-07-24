@@ -178,13 +178,9 @@ elif menu_opcao == "Registros de Empréstimos":
     # Define a senha correta
     senha_correta = "renault2025"
 
-    # Inicializa o estado de autenticação
-    if "autenticado" not in st.session_state:
-        st.session_state["autenticado"] = False
-
     # Se ainda não autenticado, pede a senha
     if not st.session_state["autenticado"]:
-        senha_entrada = st.text_input("🔐 Digite a senha para acessar os registros:", type="password")
+        senha_entrada = st.text_input("Digite a senha para acessar os registros:", type="password")
         if senha_entrada == senha_correta:
             st.session_state["autenticado"] = True
             st.success("Acesso autorizado com sucesso.")
