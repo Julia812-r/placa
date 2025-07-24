@@ -172,6 +172,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
+# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
 
@@ -184,22 +185,26 @@ elif menu_opcao == "Registros de Empréstimos":
 
     # Se ainda não autenticado, pede a senha
     if not st.session_state["autenticado"]:
-        senha_entrada = st.text_input("Digite a senha para acessar os registros:", type="password")
+        senha_entrada = st.text_input("🔐 Digite a senha para acessar os registros:", type="password")
         if senha_entrada == senha_correta:
             st.session_state["autenticado"] = True
             st.success("Acesso autorizado com sucesso.")
         elif senha_entrada:
             st.error("Senha incorreta. Tente novamente.")
+        else:
+            st.info("Digite a senha para visualizar os registros.")
 
+    # Se autenticado, exibe os dados
+    if st.session_state["autenticado"]:
         df = carregar_dados()
 
-        # Adiciona as colunas se não existirem ainda
+        # Adiciona colunas se não existirem
         if "Placa" not in df.columns:
             df["Placa"] = ""
         if "Data Devolução Real" not in df.columns:
             df["Data Devolução Real"] = ""
 
-        # Converte datas para objetos datetime
+        # Converte datas
         df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
         df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
@@ -238,7 +243,6 @@ elif menu_opcao == "Registros de Empréstimos":
         st.markdown("### Tabela de Empréstimos")
         df_exibicao = df.copy()
 
-        # Reorganiza colunas na ordem desejada
         ordem_colunas = [
             "Status",
             "Previsão Devolução",
@@ -266,14 +270,10 @@ elif menu_opcao == "Registros de Empréstimos":
             num_rows="dynamic",
             use_container_width=True,
             key="editor_emprestimos",
-            disabled=["Status"],  # Status não editável manualmente
+            disabled=["Status"],
         )
 
-        # Verifica se houve alterações
+        # Verifica alterações
         if not df_editavel.equals(df):
             salvar_dados(df_editavel)
-            
-    elif senha_entrada:
-        st.error("Senha incorreta. Tente novamente.")
-    else:
-        st.info("Digite a senha para acessar os registros.")
+            st.success("Alterações salvas com sucesso.")
