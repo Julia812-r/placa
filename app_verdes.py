@@ -186,8 +186,6 @@ elif menu_opcao == "Registros de Empréstimos":
             st.success("Acesso autorizado com sucesso.")
         elif senha_entrada:
             st.error("Senha incorreta. Tente novamente.")
-        else:
-            st.info("Digite a senha para visualizar os registros.")
 
     if senha_entrada == senha_correta:
         st.success("Acesso autorizado.")
