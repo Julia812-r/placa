@@ -172,90 +172,99 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
-    st.subheader("Registros de Empréstimos Realizados")
+    st.subheader("Área Protegida - Registros de Empréstimos")
 
-    df = carregar_dados()
+    senha_entrada = st.text_input("Digite a senha para acessar os registros:", type="password")
+    senha_correta = "renault2025"  # Você pode alterar essa senha conforme necessário
 
-    # Adiciona as colunas se não existirem ainda
-    if "Placa" not in df.columns:
-        df["Placa"] = ""
-    if "Data Devolução Real" not in df.columns:
-        df["Data Devolução Real"] = ""
+    if senha_entrada == senha_correta:
+        st.success("Acesso autorizado.")
 
-    # Converte datas para objetos datetime
-    df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
-    df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
+        df = carregar_dados()
 
-    # Define status
-    def calcular_status(row):
-        hoje = datetime.now().date()
-        if pd.notnull(row["Data Devolução Real"]):
-            return "Devolvido"
-        elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
-            return "Atrasado"
-        else:
-            return "Em aberto"
+        # Adiciona as colunas se não existirem ainda
+        if "Placa" not in df.columns:
+            df["Placa"] = ""
+        if "Data Devolução Real" not in df.columns:
+            df["Data Devolução Real"] = ""
 
-    df["Status"] = df.apply(calcular_status, axis=1)
+        # Converte datas para objetos datetime
+        df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
+        df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-    # Filtros
-    with st.container():
-        col1, col2, col3 = st.columns([3, 3, 2])
-        with col1:
-            nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
-        with col2:
-            sv_filtro = st.text_input("Filtrar por SV do Veículo")
-        with col3:
-            status_opcoes = df["Status"].unique().tolist()
-            status_filtro = st.multiselect("Filtrar por Status", options=status_opcoes, default=status_opcoes)
+        # Define status
+        def calcular_status(row):
+            hoje = datetime.now().date()
+            if pd.notnull(row["Data Devolução Real"]):
+                return "Devolvido"
+            elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+                return "Atrasado"
+            else:
+                return "Em aberto"
 
-    # Aplica filtros
-    if nome_filtro:
-        df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
-    if sv_filtro:
-        df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
-    if status_filtro:
-        df = df[df["Status"].isin(status_filtro)]
+        df["Status"] = df.apply(calcular_status, axis=1)
 
+        # Filtros
+        with st.container():
+            col1, col2, col3 = st.columns([3, 3, 2])
+            with col1:
+                nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
+            with col2:
+                sv_filtro = st.text_input("Filtrar por SV do Veículo")
+            with col3:
+                status_opcoes = df["Status"].unique().tolist()
+                status_filtro = st.multiselect("Filtrar por Status", options=status_opcoes, default=status_opcoes)
 
-    # Mostra tabela com campos editáveis
-    st.markdown("### Tabela de Empréstimos")
-    df_exibicao = df.copy()
+        # Aplica filtros
+        if nome_filtro:
+            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+        if sv_filtro:
+            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+        if status_filtro:
+            df = df[df["Status"].isin(status_filtro)]
 
-    # Reorganiza colunas na ordem desejada
-    ordem_colunas = [
-        "Status",
-        "Previsão Devolução",
-        "Data Devolução Real",
-        "Nome Supervisor",
-        "Email",
-        "Departamento",
-        "Telefone",
-        "CNH",
-        "Validade CNH",
-        "Motivo",
-        "Declaração Lida",
-        "GoodCard",
-        "SV Veículo",
-        "Placa",
-        "Pernoite",
-        "Projeto",
-        "Data Registro",
-    ]
+        # Mostra tabela com campos editáveis
+        st.markdown("### Tabela de Empréstimos")
+        df_exibicao = df.copy()
 
-    df_exibicao = df_exibicao[ordem_colunas]
+        # Reorganiza colunas na ordem desejada
+        ordem_colunas = [
+            "Status",
+            "Previsão Devolução",
+            "Data Devolução Real",
+            "Nome Supervisor",
+            "Email",
+            "Departamento",
+            "Telefone",
+            "CNH",
+            "Validade CNH",
+            "Motivo",
+            "Declaração Lida",
+            "GoodCard",
+            "SV Veículo",
+            "Placa",
+            "Pernoite",
+            "Projeto",
+            "Data Registro",
+        ]
 
-    df_editavel = st.data_editor(
-        df_exibicao,
-        num_rows="dynamic",
-        use_container_width=True,
-        key="editor_emprestimos",
-        disabled=["Status"],  # Status não editável manualmente
-    )
+        df_exibicao = df_exibicao[ordem_colunas]
 
+        df_editavel = st.data_editor(
+            df_exibicao,
+            num_rows="dynamic",
+            use_container_width=True,
+            key="editor_emprestimos",
+            disabled=["Status"],  # Status não editável manualmente
+        )
 
-    # Verifica se houve alterações
-    if not df_editavel.equals(df):
-        salvar_dados(df_editavel)     
+        # Verifica se houve alterações
+        if not df_editavel.equals(df):
+            salvar_dados(df_editavel)
+            st.success("Alterações salvas com sucesso.")
+
+    elif senha_entrada:
+        st.error("Senha incorreta. Tente novamente.")
+    else:
+        st.info("Digite a senha para acessar os registros.")
