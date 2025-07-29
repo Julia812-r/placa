@@ -172,6 +172,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
+# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
 
@@ -203,7 +204,7 @@ elif menu_opcao == "Registros de Empréstimos":
         if "Data Devolução Real" not in df.columns:
             df["Data Devolução Real"] = ""
 
-        # Converte datas
+        # Converte datas para datetime
         df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
         df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
@@ -238,10 +239,24 @@ elif menu_opcao == "Registros de Empréstimos":
         if status_filtro:
             df = df[df["Status"].isin(status_filtro)]
 
-        # Mostra tabela com campos editáveis
-        st.markdown("### Tabela de Empréstimos")
+        # Prepara DataFrame para exibição/editável
         df_exibicao = df.copy()
 
+        # Garante que colunas texto sejam strings e datas formatadas em string
+        colunas_texto = [
+            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
+            "Motivo", "Declaração Lida", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro"
+        ]
+
+        for col in colunas_texto:
+            if col in df_exibicao.columns:
+                df_exibicao[col] = df_exibicao[col].fillna("").astype(str)
+
+        # Formata as datas para string no formato DD/MM/YYYY para facilitar edição
+        df_exibicao["Previsão Devolução"] = df_exibicao["Previsão Devolução"].dt.strftime("%d/%m/%Y").fillna("")
+        df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].dt.strftime("%d/%m/%Y").fillna("")
+
+        # Reordena colunas para exibição
         ordem_colunas = [
             "Status",
             "Previsão Devolução",
@@ -264,6 +279,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
         df_exibicao = df_exibicao[ordem_colunas]
 
+        # Exibe o editor de dados
         df_editavel = st.data_editor(
             df_exibicao,
             num_rows="dynamic",
@@ -272,8 +288,11 @@ elif menu_opcao == "Registros de Empréstimos":
             disabled=["Status"],
         )
 
-        # Verifica alterações
-        if not df_editavel.equals(df):
+        # Se houver mudanças, salva os dados
+        if not df_editavel.equals(df_exibicao):
+            # Antes de salvar, converte datas de volta para datetime para manter padrão no CSV
+            df_editavel["Previsão Devolução"] = pd.to_datetime(df_editavel["Previsão Devolução"], format="%d/%m/%Y", errors='coerce')
+            df_editavel["Data Devolução Real"] = pd.to_datetime(df_editavel["Data Devolução Real"], format="%d/%m/%Y", errors='coerce')
+
             salvar_dados(df_editavel)
-            
- 
+            st.success("Registros atualizados com sucesso.")
