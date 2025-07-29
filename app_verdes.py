@@ -238,6 +238,27 @@ elif menu_opcao == "Registros de Empréstimos":
         if status_filtro:
             df = df[df["Status"].isin(status_filtro)]
 
+        # SUGESTÃO DE PLACAS (autocomplete auxiliar)
+        placas_cadastradas = [
+            "APE-8033", "APE-1881", "APE-7948", "APE-8020", "APE-7953", "APE-0I26",
+            "APE-0817", "APE-8032", "APE-0668", "APE-1423", "APE-8025", "APE-0766",
+            "APE-1817", "APE-0739", "APE-8026", "APE-1425", "APE-7960", "APE-7961",
+            "APE-8030", "APE-0825", "APE-0782", "APE-0736", "APE-7950", "APE-7710",
+            "APE-0737", "APE-8029", "APE-7956", "APE-0786", "APE-1426", "APE-0821",
+            "APE-8027", "APE-7954", "APE-0H38", "APE-1427", "APE-7955", "APE-7949",
+            "APE-8028", "APE-0823", "APE-0815", "APE-7951", "APE-0768", "APE-1461",
+            "APE-7957", "APE-7959", "APE-0806", "APE-0667", "APE-7947", "APE-0812",
+            "APE-0824"
+        ]
+
+        st.markdown("#### Sugestões de Placas Cadastradas")
+        placa_filtro = st.text_input("Digite o início da placa para ver sugestões:", placeholder="Ex: APE-08")
+        sugestoes = [p for p in placas_cadastradas if placa_filtro.upper() in p]
+
+        if placa_filtro and sugestoes:
+            st.markdown("**Sugestões encontradas:**")
+            st.markdown(", ".join(sugestoes))
+
         # Mostra tabela com campos editáveis
         st.markdown("### Tabela de Empréstimos")
         df_exibicao = df.copy()
