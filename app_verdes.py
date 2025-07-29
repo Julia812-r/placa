@@ -121,32 +121,12 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
         with col2:
             departamento = st.text_input("Departamento", placeholder="DE-TR")
             sv = st.text_input("SV do Veículo")
+            projeto = st.text_input("Projeto", placeholder="Ex: HJD - R1312 - F67")
+            goodcard = st.radio("Necessita de cartão GoodCard?", ["NÃO", "SIM"], horizontal=True)
+            pernoite = st.radio("Utilização com pernoite?", ["NÃO", "SIM"], horizontal=True)
 
-        # ✅ CAMPO NOVO: Número da Placa com sugestões
-        placas_cadastradas = [
-            "APE-8033", "APE-1881", "APE-7948", "APE-8020", "APE-7953", "APE-0I26",
-            "APE-0817", "APE-8032", "APE-0668", "APE-1423", "APE-8025", "APE-0766",
-            "APE-1817", "APE-0739", "APE-8026", "APE-1425", "APE-7960", "APE-7961",
-            "APE-8030", "APE-0825", "APE-0782", "APE-0736", "APE-7950", "APE-7710",
-            "APE-0737", "APE-8029", "APE-7956", "APE-0786", "APE-1426", "APE-0821",
-            "APE-8027", "APE-7954", "APE-0H38", "APE-1427", "APE-7955", "APE-7949",
-            "APE-8028", "APE-0823", "APE-0815", "APE-7951", "APE-0768", "APE-1461",
-            "APE-7957", "APE-7959", "APE-0806", "APE-0667", "APE-7947", "APE-0812",
-            "APE-0824"
-        ]
-
-        placa_digitada = st.text_input("Número da Placa", placeholder="Ex: APE-0812")
-
-        sugestoes = [p for p in placas_cadastradas if placa_digitada.upper() in p]
-        if placa_digitada and sugestoes:
-            st.markdown("**Sugestões encontradas:**")
-            for s in sugestoes:
-                st.markdown(f"- {s}")
-
-        projeto = st.text_input("Projeto", placeholder="Ex: HJD - R1312 - F67")
-        goodcard = st.radio("Necessita de cartão GoodCard?", ["NÃO", "SIM"], horizontal=True)
-        pernoite = st.radio("Utilização com pernoite?", ["NÃO", "SIM"], horizontal=True)
-
+        motivo = st.text_area("Local e motivo da utilização", placeholder="Circuitos CPVL para ensaio de durabilidade do projeto XXX")
+        previsao_devolucao = st.date_input("Previsão de Devolução", format="DD/MM/YYYY")
 
         with st.expander("Leia as orientações em caso de sinistro"):
             st.markdown("""
@@ -184,7 +164,6 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                     "Declaração Lida": "SIM",
                     "GoodCard": goodcard,
                     "SV Veículo": sv,
-                    "Placa": placa_digitada.upper(),
                     "Pernoite": pernoite,
                     "Projeto": projeto,
                     "Data Registro": datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -297,3 +276,4 @@ elif menu_opcao == "Registros de Empréstimos":
         if not df_editavel.equals(df):
             salvar_dados(df_editavel)
             
+ 
