@@ -295,4 +295,4 @@ elif menu_opcao == "Registros de Empréstimos":
             df_editavel["Data Devolução Real"] = pd.to_datetime(df_editavel["Data Devolução Real"], format="%d/%m/%Y", errors='coerce')
 
             salvar_dados(df_editavel)
-            st.success("Registros atualizados com sucesso.")
+            
