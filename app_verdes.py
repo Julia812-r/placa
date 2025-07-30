@@ -230,7 +230,7 @@ elif menu_opcao == "Registros de Empréstimos":
         with st.container():
             col1, col2, col3 = st.columns([3, 3, 2])
             with col1:
-                nome_filtro = st.text_input("Filtrar por Nome do Supervisor")
+                nome_filtro = st.text_input("Filtrar por Nome do Solicitante")
             with col2:
                 sv_filtro = st.text_input("Filtrar por SV do Veículo")
             with col3:
