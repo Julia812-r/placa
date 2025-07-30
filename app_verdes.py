@@ -250,8 +250,8 @@ elif menu_opcao == "Registros de Empréstimos":
 
         # Garante que colunas texto sejam strings e datas formatadas em string
         colunas_texto = [
-            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
-            "Motivo", "Declaração Lida", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro"
+            "Nome Solicitante", "Email Solicitante", "Departamento", "IPN Solicitante", "Telefone", "CNH", "Validade CNH", "Nome Supervisor", "Email Supervisor",
+            "Motivo", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro"
         ]
 
         for col in colunas_texto:
@@ -270,14 +270,13 @@ elif menu_opcao == "Registros de Empréstimos":
             "Nome Solicitante",
             "Email Solicitante"
             "Departamento",
-            "IPN"
+            "IPN Solicitante"
             "Telefone",
             "CNH",
             "Validade CNH",
             "Nome Supervisor",
             "Email Supervisor",
             "Motivo",
-            "Declaração Lida",
             "GoodCard",
             "SV Veículo",
             "Placa",
