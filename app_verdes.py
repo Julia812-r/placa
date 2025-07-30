@@ -285,6 +285,15 @@ elif menu_opcao == "Registros de Empréstimos":
             "Data Registro",
         ]
 
+        # Exibe colunas atuais e desejadas para debug
+        st.write("Colunas no DataFrame:", df_exibicao.columns.tolist())
+        st.write("Colunas solicitadas:", ordem_colunas)
+
+        # Seleciona apenas colunas existentes para evitar KeyError
+        colunas_validas = [col for col in ordem_colunas if col in df_exibicao.columns]
+        df_exibicao = df_exibicao[colunas_validas]
+
+
         df_exibicao = df_exibicao[ordem_colunas]
 
         # Exibe o editor de dados
