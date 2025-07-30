@@ -267,12 +267,15 @@ elif menu_opcao == "Registros de Empréstimos":
             "Status",
             "Previsão Devolução",
             "Data Devolução Real",
-            "Nome Supervisor",
-            "Email",
+            "Nome Solicitante",
+            "Email Solicitante"
             "Departamento",
+            "IPN"
             "Telefone",
             "CNH",
             "Validade CNH",
+            "Nome Supervisor",
+            "Email Supervisor",
             "Motivo",
             "Declaração Lida",
             "GoodCard",
