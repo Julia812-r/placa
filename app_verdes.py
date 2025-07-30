@@ -113,13 +113,16 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
     with st.form("form_emprestimo"):
         col1, col2 = st.columns(2)
         with col1:
-            nome = st.text_input("Nome Completo do Supervisor", placeholder="Mario de Andrade")
-            email = st.text_input("Email", placeholder="mario.andrade@renault.com")
+            nome = st.text_input("Nome Completo do Solicitante", placeholder="João da Silva")
+            email = st.text_input("Email do Solicitante", placeholder="joao.silva@renault.com")
+            ipn = st.text_input("IPN do Solicitante", placeholder="PM51532")
+            departamento = st.text_input("Departamento", placeholder="DE-TR")
             telefone = st.text_input("Telefone", placeholder="33803030 ou 988774433")
             cnh = st.text_input("Número da CNH")
             validade_cnh = st.date_input("Validade da CNH", format="DD/MM/YYYY")
         with col2:
-            departamento = st.text_input("Departamento", placeholder="DE-TR")
+            nome = st.text_input("Nome Completo do Supervisor", placeholder="Mario de Andrade")
+            email = st.text_input("Email", placeholder="mario.andrade@renault.com")
             sv = st.text_input("SV do Veículo")
             projeto = st.text_input("Projeto", placeholder="Ex: HJD - R1312 - F67")
             goodcard = st.radio("Necessita de cartão GoodCard?", ["NÃO", "SIM"], horizontal=True)
@@ -153,12 +156,15 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.warning("Você deve confirmar a leitura da declaração.")
             else:
                 dados = {
+                    "Nome Solicitante": nome,
+                    "Email Solicitante": email,
+                    "IPN Solicitante": ipn,
+                    "Departamento": departamento,
+                    "Telefone Solicitante": telefone,
+                    "Numero cnh": cnh, 
+                    "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
                     "Nome Supervisor": nome,
                     "Email": email,
-                    "Departamento": departamento,
-                    "Telefone": telefone,
-                    "CNH": cnh,
-                    "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
                     "Motivo": motivo,
                     "Previsão Devolução": previsao_devolucao.strftime("%d/%m/%Y"),
                     "Declaração Lida": "SIM",
