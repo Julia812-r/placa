@@ -279,33 +279,6 @@ elif menu_opcao == "Registros de Empréstimos":
 
         df_exibicao = df_exibicao[ordem_colunas]
 
-        # Lista de placas fixas
-        lista_placas = [
-            "APE-8033", "APE-1881", "APE-7948", "APE-8020", "APE-7953", "APE-0I26",
-            "APE-0817", "APE-8032", "APE-0668", "APE-1423", "APE-8025", "APE-0766",
-            "APE-1817", "APE-0739", "APE-8026", "APE-1425", "APE-7960", "APE-7961",
-            "APE-8030", "APE-0825", "APE-0782", "APE-0736", "APE-7950", "APE-7710",
-            "APE-0737", "APE-8029", "APE-7956", "APE-0786", "APE-1426", "APE-0821",
-            "APE-8027", "APE-7954", "APE-0H38", "APE-1427", "APE-7955", "APE-7949",
-            "APE-8028", "APE-0823", "APE-0815", "APE-7951", "APE-0768", "APE-1461",
-            "APE-7957", "APE-7959", "APE-0806", "APE-0667", "APE-7947", "APE-0812", "APE-0824"
-        ]
-
-        st.markdown("### Placas disponíveis para consulta:")
-        st.write(", ".join(lista_placas))
-
-        # Input livre para busca ou adicionar placa
-        placa_input = st.text_input("Digite ou selecione uma placa (você pode digitar qualquer placa):")
-
-        # Aqui, se quiser, você pode mostrar placas que começam com o texto digitado
-        placas_sugeridas = [p for p in lista_placas if p.startswith(placa_input.upper())] if placa_input else lista_placas
-
-        st.markdown("### Placas sugeridas:")
-        st.write(", ".join(placas_sugeridas[:10]))  # mostra só 10 para não poluir
-
-        # Depois, na tabela df_editavel, o usuário pode preencher livremente a coluna "Placa"
-
-
         # Exibe o editor de dados
         df_editavel = st.data_editor(
             df_exibicao,
