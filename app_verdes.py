@@ -122,7 +122,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
             validade_cnh = st.date_input("Validade da CNH", format="DD/MM/YYYY")
         with col2:
             nome = st.text_input("Nome Completo do Supervisor", placeholder="Mario de Andrade")
-            email = st.text_input("Email", placeholder="mario.andrade@renault.com")
+            email = st.text_input("Email do Supervisor", placeholder="mario.andrade@renault.com")
             sv = st.text_input("SV do Veículo")
             projeto = st.text_input("Projeto", placeholder="Ex: HJD - R1312 - F67")
             goodcard = st.radio("Necessita de cartão GoodCard?", ["NÃO", "SIM"], horizontal=True)
@@ -164,7 +164,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                     "Numero cnh": cnh, 
                     "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
                     "Nome Supervisor": nome,
-                    "Email": email,
+                    "Email Supervisor": email,
                     "Motivo": motivo,
                     "Previsão Devolução": previsao_devolucao.strftime("%d/%m/%Y"),
                     "Declaração Lida": "SIM",
