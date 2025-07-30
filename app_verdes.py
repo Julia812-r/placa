@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 from PIL import Image
+from firebase_config import db  # importa o Firestore
 
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
@@ -10,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS para sidebar preta e título personalizado
+# CSS e título (igual ao seu)
 st.markdown("""
     <style>
     .titulo-renault {
@@ -30,12 +31,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título principal
 st.markdown('<div class="titulo-renault">RENAULT</div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align: center;'>Controle de Empréstimo - Placa Verde</h1>", unsafe_allow_html=True)
 
-# ----------------- Logo na Sidebar -----------------
-from PIL import Image
+# ----------------- Logo -----------------
 from urllib.request import urlopen
 
 try:
@@ -45,32 +44,46 @@ try:
 except Exception as e:
     st.sidebar.write("Erro ao carregar a logo:", e)
 
+# ----------------- Funções Firestore -----------------
 
-# ----------------- Funções Auxiliares -----------------
-CSV_FILE = "emprestimos_placa_verde.csv"
-
-def carregar_dados():
-    if os.path.exists(CSV_FILE):
-        return pd.read_csv(CSV_FILE)
+def carregar_dados_firestore():
+    colecao = db.collection("emprestimos_placa_verde")
+    docs = colecao.stream()
+    registros = []
+    for doc in docs:
+        dados = doc.to_dict()
+        dados['id_doc'] = doc.id
+        registros.append(dados)
+    if registros:
+        return pd.DataFrame(registros)
     else:
         return pd.DataFrame(columns=[
-            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
-            "Motivo", "Previsão Devolução", "Declaração Lida",
-            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
+            "Nome Solicitante", "Email Solicitante", "IPN Solicitante", "Departamento", "Telefone", "CNH", "Validade CNH",
+            "Nome Supervisor", "Email Supervisor", "Motivo", "Previsão Devolução", "Declaração Lida",
+            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro",
+            "Placa", "Data Devolução Real"
         ])
 
-def salvar_dados(df):
-    df.to_csv(CSV_FILE, index=False)
+def salvar_dados_firestore(df):
+    colecao = db.collection("emprestimos_placa_verde")
+    # Apaga tudo para regravar (simplificação)
+    for doc in colecao.stream():
+        colecao.document(doc.id).delete()
 
-def adicionar_registro(novo_dado):
-    df = carregar_dados()
-    df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
-    salvar_dados(df)
+    # Insere novamente
+    for _, row in df.iterrows():
+        dados = row.to_dict()
+        dados.pop('id_doc', None)
+        colecao.add(dados)
+
+def adicionar_registro_firestore(novo_dado):
+    colecao = db.collection("emprestimos_placa_verde")
+    colecao.add(novo_dado)
 
 # ----------------- Menu lateral -----------------
 menu_opcao = st.sidebar.selectbox("Navegação", ["Formulário de Solicitação", "Registros de Empréstimos"])
 
-# ----------------- Página: Formulário -----------------
+# ----------------- Formulário -----------------
 if menu_opcao == "Formulário de Solicitação":
     st.subheader("Regras para Utilização da Placa Verde")
 
@@ -102,13 +115,9 @@ O Art. 4º da Resolução 793/94 define que somente podem dirigir ou estar dentr
 
 Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
 """
-
         st.markdown(regras_texto)
-    
-    st.subheader("Formulário de Solicitação de Empréstimo")
-    
-    # ... segue o seu formulário aqui ...
 
+    st.subheader("Formulário de Solicitação de Empréstimo")
 
     with st.form("form_emprestimo"):
         col1, col2 = st.columns(2)
@@ -143,25 +152,26 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
             """)
 
         declaracao = st.checkbox("Li e estou ciente das informações da Resolução Nº 793/94.")
-
-        # Novo checkbox adicional
         confirmacao_info = st.checkbox("Confirmo que as informações fornecidas estão corretas.")
 
         submit = st.form_submit_button("Enviar Solicitação")
 
         if submit:
-            if not all([nome, email, departamento, telefone, cnh, motivo, projeto, sv]):
+            campos_obrigatorios = [nome_solicitante, email_solicitante, departamento, telefone, cnh, motivo, projeto, sv]
+            if not all(campos_obrigatorios):
                 st.warning("Preencha todos os campos obrigatórios.")
             elif not declaracao:
                 st.warning("Você deve confirmar a leitura da declaração.")
+            elif not confirmacao_info:
+                st.warning("Você deve confirmar que as informações estão corretas.")
             else:
                 dados = {
                     "Nome Solicitante": nome_solicitante,
                     "Email Solicitante": email_solicitante,
                     "IPN Solicitante": ipn,
                     "Departamento": departamento,
-                    "Telefone Solicitante": telefone,
-                    "Numero cnh": cnh, 
+                    "Telefone": telefone,
+                    "CNH": cnh,
                     "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
                     "Nome Supervisor": nome_supervisor,
                     "Email Supervisor": email_supervisor,
@@ -172,24 +182,22 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                     "SV Veículo": sv,
                     "Pernoite": pernoite,
                     "Projeto": projeto,
-                    "Data Registro": datetime.now().strftime("%d/%m/%Y %H:%M")
+                    "Data Registro": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "Placa": "",
+                    "Data Devolução Real": ""
                 }
-                adicionar_registro(dados)
+                adicionar_registro_firestore(dados)
                 st.success("Solicitação registrada com sucesso.")
 
-# ----------------- Página: Registros -----------------
-# ----------------- Página: Registros -----------------
+# ----------------- Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
 
-    # Define a senha correta
     senha_correta = "renault2025"
 
-    # Inicializa o estado de autenticação
     if "autenticado" not in st.session_state:
         st.session_state["autenticado"] = False
 
-    # Se ainda não autenticado, pede a senha
     if not st.session_state["autenticado"]:
         senha_entrada = st.text_input("🔐 Digite a senha para acessar os registros:", type="password")
         if senha_entrada == senha_correta:
@@ -200,9 +208,8 @@ elif menu_opcao == "Registros de Empréstimos":
         else:
             st.info("Digite a senha para visualizar os registros.")
 
-    # Se autenticado, exibe os dados
     if st.session_state["autenticado"]:
-        df = carregar_dados()
+        df = carregar_dados_firestore()
 
         # Adiciona colunas se não existirem
         if "Placa" not in df.columns:
@@ -210,11 +217,9 @@ elif menu_opcao == "Registros de Empréstimos":
         if "Data Devolução Real" not in df.columns:
             df["Data Devolução Real"] = ""
 
-        # Converte datas para datetime
         df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
         df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
-        # Define status
         def calcular_status(row):
             hoje = datetime.now().date()
             if pd.notnull(row["Data Devolução Real"]):
@@ -226,9 +231,8 @@ elif menu_opcao == "Registros de Empréstimos":
 
         df["Status"] = df.apply(calcular_status, axis=1)
 
-        # Filtros
         with st.container():
-            col1, col2, col3 = st.columns([3, 3, 2])
+            col1, col2, col3 = st.columns([3,3,2])
             with col1:
                 nome_filtro = st.text_input("Filtrar por Nome do Solicitante")
             with col2:
@@ -237,18 +241,15 @@ elif menu_opcao == "Registros de Empréstimos":
                 status_opcoes = df["Status"].unique().tolist()
                 status_filtro = st.multiselect("Filtrar por Status", options=status_opcoes, default=status_opcoes)
 
-        # Aplica filtros
         if nome_filtro:
-            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+            df = df[df["Nome Solicitante"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
             df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
         if status_filtro:
             df = df[df["Status"].isin(status_filtro)]
 
-        # Prepara DataFrame para exibição/editável
         df_exibicao = df.copy()
 
-        # Garante que colunas texto sejam strings e datas formatadas em string
         colunas_texto = [
             "Nome Solicitante", "Email Solicitante", "Departamento", "IPN Solicitante", "Telefone", "CNH", "Validade CNH", "Nome Supervisor", "Email Supervisor",
             "Motivo", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro"
@@ -258,11 +259,9 @@ elif menu_opcao == "Registros de Empréstimos":
             if col in df_exibicao.columns:
                 df_exibicao[col] = df_exibicao[col].fillna("").astype(str)
 
-        # Formata as datas para string no formato DD/MM/YYYY para facilitar edição
         df_exibicao["Previsão Devolução"] = df_exibicao["Previsão Devolução"].dt.strftime("%d/%m/%Y").fillna("")
         df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].dt.strftime("%d/%m/%Y").fillna("")
 
-        # Reordena colunas para exibição
         ordem_colunas = [
             "Status",
             "Previsão Devolução",
@@ -285,7 +284,6 @@ elif menu_opcao == "Registros de Empréstimos":
             "Data Registro",
         ]
 
-
         for col in ordem_colunas:
             if col not in df_exibicao.columns:
                 if col == "Status":
@@ -293,11 +291,8 @@ elif menu_opcao == "Registros de Empréstimos":
                 else:
                     df_exibicao[col] = ""
 
-
-
         df_exibicao = df_exibicao[ordem_colunas]
 
-        # Exibe o editor de dados
         df_editavel = st.data_editor(
             df_exibicao,
             num_rows="dynamic",
@@ -306,11 +301,10 @@ elif menu_opcao == "Registros de Empréstimos":
             disabled=["Status"],
         )
 
-        # Se houver mudanças, salva os dados
+        # Detecta mudanças para salvar no Firestore
         if not df_editavel.equals(df_exibicao):
-            # Antes de salvar, converte datas de volta para datetime para manter padrão no CSV
             df_editavel["Previsão Devolução"] = pd.to_datetime(df_editavel["Previsão Devolução"], format="%d/%m/%Y", errors='coerce')
             df_editavel["Data Devolução Real"] = pd.to_datetime(df_editavel["Data Devolução Real"], format="%d/%m/%Y", errors='coerce')
 
-            salvar_dados(df_editavel)
+            salvar_dados_firestore(df_editavel)
             
