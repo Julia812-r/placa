@@ -285,13 +285,14 @@ elif menu_opcao == "Registros de Empréstimos":
             "Data Registro",
         ]
 
-        # Exibe colunas atuais e desejadas para debug
-        st.write("Colunas no DataFrame:", df_exibicao.columns.tolist())
-        st.write("Colunas solicitadas:", ordem_colunas)
 
-        # Seleciona apenas colunas existentes para evitar KeyError
-        colunas_validas = [col for col in ordem_colunas if col in df_exibicao.columns]
-        df_exibicao = df_exibicao[colunas_validas]
+        for col in ordem_colunas:
+            if col not in df_exibicao.columns:
+                if col == "Status":
+                    df_exibicao[col] = df.apply(calcular_status, axis=1)
+                else:
+                    df_exibicao[col] = ""
+
 
 
         df_exibicao = df_exibicao[ordem_colunas]
