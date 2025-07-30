@@ -113,16 +113,16 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
     with st.form("form_emprestimo"):
         col1, col2 = st.columns(2)
         with col1:
-            nome = st.text_input("Nome Completo do Solicitante", placeholder="João da Silva")
-            email = st.text_input("Email do Solicitante", placeholder="joao.silva@renault.com")
+            nome_solicitante = st.text_input("Nome Completo do Solicitante", placeholder="João da Silva")
+            email_solicitante = st.text_input("Email do Solicitante", placeholder="joao.silva@renault.com")
             ipn = st.text_input("IPN do Solicitante", placeholder="PM51532")
             departamento = st.text_input("Departamento", placeholder="DE-TR")
             telefone = st.text_input("Telefone", placeholder="33803030 ou 988774433")
             cnh = st.text_input("Número da CNH")
             validade_cnh = st.date_input("Validade da CNH", format="DD/MM/YYYY")
         with col2:
-            nome = st.text_input("Nome Completo do Supervisor", placeholder="Mario de Andrade")
-            email = st.text_input("Email do Supervisor", placeholder="mario.andrade@renault.com")
+            nome_supervisor = st.text_input("Nome Completo do Supervisor", placeholder="Mario de Andrade")
+            email_supervisor = st.text_input("Email do Supervisor", placeholder="mario.andrade@renault.com")
             sv = st.text_input("SV do Veículo")
             projeto = st.text_input("Projeto", placeholder="Ex: HJD - R1312 - F67")
             goodcard = st.radio("Necessita de cartão GoodCard?", ["NÃO", "SIM"], horizontal=True)
@@ -156,15 +156,15 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.warning("Você deve confirmar a leitura da declaração.")
             else:
                 dados = {
-                    "Nome Solicitante": nome,
-                    "Email Solicitante": email,
+                    "Nome Solicitante": nome_solicitante,
+                    "Email Solicitante": email_solicitante,
                     "IPN Solicitante": ipn,
                     "Departamento": departamento,
                     "Telefone Solicitante": telefone,
                     "Numero cnh": cnh, 
                     "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
-                    "Nome Supervisor": nome,
-                    "Email Supervisor": email,
+                    "Nome Supervisor": nome_supervisor,
+                    "Email Supervisor": email_supervisor,
                     "Motivo": motivo,
                     "Previsão Devolução": previsao_devolucao.strftime("%d/%m/%Y"),
                     "Declaração Lida": "SIM",
@@ -268,9 +268,9 @@ elif menu_opcao == "Registros de Empréstimos":
             "Previsão Devolução",
             "Data Devolução Real",
             "Nome Solicitante",
-            "Email Solicitante"
+            "Email Solicitante",
             "Departamento",
-            "IPN Solicitante"
+            "IPN Solicitante",
             "Telefone",
             "CNH",
             "Validade CNH",
