@@ -5,28 +5,33 @@ import os
 from PIL import Image
 
 # Caminho do arquivo Excel na pasta OneDrive sincronizada (mude para seu caminho)
-ARQUIVO_EXCEL = r"C:\Users\pm25625\OneDrive - Alliance\PlacasVerdes\registros.xlsx"
-SHEET_NAME = "Planilha1"  # ou o nome da sua aba, geralmente Planilha1 ou como estiver no Excel
+ARQUIVO_EXCEL = "registros.xlsx"
+SHEET_NAME = "Planilha1"
 
 def carregar_dados():
     if os.path.exists(ARQUIVO_EXCEL):
         return pd.read_excel(ARQUIVO_EXCEL, sheet_name=SHEET_NAME)
     else:
-        return pd.DataFrame(columns=[
+        colunas = [
             "Nome Completo do Solicitante", "Email do Solicitante", "IPN do Solicitante", "Departamento", "Telefone", "Número da CNH", "Validade da CNH",
             "Local e motivo da utilização", "Nome Completo do Supervisor", "Email do Supervisor",
             "SV Veículo", "Projeto", "Necessita de cartão GoodCard?",
             "Utilização com pernoite?", "Previsão de Devolução"
-        ])
+        ]
+        
+        df = pd.DataFrame(columns=colunas)
+        df.to_excel(ARQUIVO_EXCEL, index=False, sheet_name=SHEET_NAME)
+        return df
 
 def salvar_dados(df):
     with pd.ExcelWriter(ARQUIVO_EXCEL, engine='openpyxl', mode='w') as writer:
         df.to_excel(writer, index=False, sheet_name=SHEET_NAME)
-        
+
 def adicionar_registro(novo_dado):
     df = carregar_dados()
     df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
     salvar_dados(df)
+
 
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
@@ -313,6 +318,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
+
 
 
 
