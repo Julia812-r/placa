@@ -249,8 +249,8 @@ elif menu_opcao == "Registros de Empréstimos":
 
         # Garante que colunas texto sejam strings e datas formatadas em string
         colunas_texto = [
-            "Nome Solicitante", "Email Solicitante", "Departamento", "IPN Solicitante", "Telefone", "CNH", "Validade CNH", "Nome Supervisor", "Email Supervisor",
-            "Motivo", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro", "Previsão Devolução" 
+            "Nome Completo do Solicitante", "Email do Solicitante", "IPN do Solicitante", "Departamento", "Telefone", "Local e motivo da utilização", "Nome Completo do Supervisor", "Email do Supervisor",
+            "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro", "Previsão de Devolução" 
         ]
 
         for col in colunas_texto:
@@ -313,6 +313,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
+
 
 
 
