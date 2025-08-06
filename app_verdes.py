@@ -210,7 +210,7 @@ elif menu_opcao == "Registros de Empréstimos":
             df["Data Devolução Real"] = ""
 
         # Converte datas para datetime
-        df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
+        df["Previsão de Devolução"] = pd.to_datetime(df["Previsão de Devolução"], dayfirst=True, errors='coerce')
         df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
         # Define status
@@ -313,6 +313,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
+
 
 
 
