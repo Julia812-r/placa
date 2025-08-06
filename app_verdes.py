@@ -258,7 +258,7 @@ elif menu_opcao == "Registros de Empréstimos":
                 df_exibicao[col] = df_exibicao[col].fillna("").astype(str)
 
         # Formata as datas para string no formato DD/MM/YYYY para facilitar edição
-        df_exibicao["Previsão Devolução"] = df_exibicao["Previsão Devolução"].dt.strftime("%d/%m/%Y").fillna("")
+        df_exibicao["Previsão de Devolução"] = df_exibicao["Previsão de Devolução"].dt.strftime("%d/%m/%Y").fillna("")
         df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].dt.strftime("%d/%m/%Y").fillna("")
 
         # Reordena colunas para exibição
@@ -313,6 +313,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
+
 
 
 
