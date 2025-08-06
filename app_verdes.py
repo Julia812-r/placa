@@ -218,7 +218,7 @@ elif menu_opcao == "Registros de Empréstimos":
             hoje = datetime.now().date()
             if pd.notnull(row["Data Devolução Real"]):
                 return "Devolvido"
-            elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+            elif pd.notnull(row["Previsão de Devolução"]) and hoje > row["Previsão de Devolução"].date():
                 return "Atrasado"
             else:
                 return "Em aberto"
@@ -251,6 +251,7 @@ elif menu_opcao == "Registros de Empréstimos":
         colunas_texto = [
             "Nome Solicitante", "Email Solicitante", "Departamento", "IPN Solicitante", "Telefone", "CNH", "Validade CNH", "Nome Supervisor", "Email Supervisor",
             "Motivo", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro"
+        ]
 
         for col in colunas_texto:
             if col in df_exibicao.columns:
@@ -312,6 +313,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
+
 
 
 
