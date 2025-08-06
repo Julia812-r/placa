@@ -4,35 +4,6 @@ from datetime import datetime
 import os
 from PIL import Image
 
-# Caminho do arquivo Excel na pasta OneDrive sincronizada (mude para seu caminho)
-ARQUIVO_EXCEL = "registros.xlsx"
-SHEET_NAME = "Planilha1"
-
-def carregar_dados():
-    if os.path.exists(ARQUIVO_EXCEL):
-        return pd.read_excel(ARQUIVO_EXCEL, sheet_name=SHEET_NAME)
-    else:
-        colunas = [
-            "Nome Completo do Solicitante", "Email do Solicitante", "IPN do Solicitante", "Departamento", "Telefone", "Número da CNH", "Validade da CNH",
-            "Local e motivo da utilização", "Nome Completo do Supervisor", "Email do Supervisor",
-            "SV Veículo", "Projeto", "Necessita de cartão GoodCard?",
-            "Utilização com pernoite?", "Previsão de Devolução"
-        ]
-        
-        df = pd.DataFrame(columns=colunas)
-        df.to_excel(ARQUIVO_EXCEL, index=False, sheet_name=SHEET_NAME)
-        return df
-
-def salvar_dados(df):
-    with pd.ExcelWriter(ARQUIVO_EXCEL, engine='openpyxl', mode='w') as writer:
-        df.to_excel(writer, index=False, sheet_name=SHEET_NAME)
-
-def adicionar_registro(novo_dado):
-    df = carregar_dados()
-    df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
-    salvar_dados(df)
-
-
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
     page_title="Controle de Empréstimo de Placa Verde",
@@ -73,6 +44,28 @@ try:
     st.sidebar.image(logo, use_container_width=True)
 except Exception as e:
     st.sidebar.write("Erro ao carregar a logo:", e)
+
+
+# ----------------- Funções Auxiliares -----------------
+CSV_FILE = "emprestimos_placa_verde.csv"
+
+def carregar_dados():
+    if os.path.exists(CSV_FILE):
+        return pd.read_csv(CSV_FILE)
+    else:
+        return pd.DataFrame(columns=[
+            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
+            "Motivo", "Previsão Devolução", "Declaração Lida",
+            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
+        ])
+
+def salvar_dados(df):
+    df.to_csv(CSV_FILE, index=False)
+
+def adicionar_registro(novo_dado):
+    df = carregar_dados()
+    df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
+    salvar_dados(df)
 
 # ----------------- Menu lateral -----------------
 menu_opcao = st.sidebar.selectbox("Navegação", ["Formulário de Solicitação", "Registros de Empréstimos"])
@@ -157,31 +150,34 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
         submit = st.form_submit_button("Enviar Solicitação")
 
         if submit:
-            if not all([nome_solicitante, email_solicitante, departamento, telefone, cnh, validade_cnh,  motivo, nome_supervisor, email_supervisor, sv, projeto, goodcard, pernoite, previsao_devolucao]):
+            if not all([nome, email, departamento, telefone, cnh, motivo, projeto, sv]):
                 st.warning("Preencha todos os campos obrigatórios.")
             elif not declaracao:
                 st.warning("Você deve confirmar a leitura da declaração.")
             else:
                 dados = {
-                    "Nome Completo do Solicitante": nome_solicitante,
-                    "Email do Solicitante": email_solicitante,
-                    "IPN do Solicitante": ipn,
+                    "Nome Solicitante": nome_solicitante,
+                    "Email Solicitante": email_solicitante,
+                    "IPN Solicitante": ipn,
                     "Departamento": departamento,
-                    "Telefone": telefone,
-                    "Número da CNH": cnh, 
-                    "Validade da CNH": validade_cnh.strftime("%d/%m/%Y"),
-                    "Local e motivo da utilização": motivo,
-                    "Nome Completo do Supervisor": nome_supervisor,
-                    "Email do Supervisor": email_supervisor,
+                    "Telefone Solicitante": telefone,
+                    "Numero cnh": cnh, 
+                    "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
+                    "Nome Supervisor": nome_supervisor,
+                    "Email Supervisor": email_supervisor,
+                    "Motivo": motivo,
+                    "Previsão Devolução": previsao_devolucao.strftime("%d/%m/%Y"),
+                    "Declaração Lida": "SIM",
+                    "GoodCard": goodcard,
                     "SV Veículo": sv,
+                    "Pernoite": pernoite,
                     "Projeto": projeto,
-                    "Necessita de cartão GoodCard?": goodcard,
-                    "Utilização com pernoite?": pernoite,
-                    "Previsão de Devolução": previsao_devolucao.strftime("%d/%m/%Y")
+                    "Data Registro": datetime.now().strftime("%d/%m/%Y %H:%M")
                 }
                 adicionar_registro(dados)
                 st.success("Solicitação registrada com sucesso.")
 
+# ----------------- Página: Registros -----------------
 # ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
@@ -215,7 +211,7 @@ elif menu_opcao == "Registros de Empréstimos":
             df["Data Devolução Real"] = ""
 
         # Converte datas para datetime
-        df["Previsão de Devolução"] = pd.to_datetime(df["Previsão de Devolução"], dayfirst=True, errors='coerce')
+        df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
         df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
 
         # Define status
@@ -223,7 +219,7 @@ elif menu_opcao == "Registros de Empréstimos":
             hoje = datetime.now().date()
             if pd.notnull(row["Data Devolução Real"]):
                 return "Devolvido"
-            elif pd.notnull(row["Previsão de Devolução"]) and hoje > row["Previsão de Devolução"].date():
+            elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
                 return "Atrasado"
             else:
                 return "Em aberto"
@@ -243,9 +239,9 @@ elif menu_opcao == "Registros de Empréstimos":
 
         # Aplica filtros
         if nome_filtro:
-            df = df[df["Nome Completo do Solicitante"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            df = df[df["SV do Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
         if status_filtro:
             df = df[df["Status"].isin(status_filtro)]
 
@@ -263,7 +259,7 @@ elif menu_opcao == "Registros de Empréstimos":
                 df_exibicao[col] = df_exibicao[col].fillna("").astype(str)
 
         # Formata as datas para string no formato DD/MM/YYYY para facilitar edição
-        df_exibicao["Previsão de Devolução"] = df_exibicao["Previsão de Devolução"].dt.strftime("%d/%m/%Y").fillna("")
+        df_exibicao["Previsão Devolução"] = df_exibicao["Previsão Devolução"].dt.strftime("%d/%m/%Y").fillna("")
         df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].dt.strftime("%d/%m/%Y").fillna("")
 
         # Reordena colunas para exibição
@@ -318,12 +314,3 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
-
-
-
-
-
-
-
-
-
