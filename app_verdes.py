@@ -4,6 +4,30 @@ from datetime import datetime
 import os
 from PIL import Image
 
+# Caminho do arquivo Excel na pasta OneDrive sincronizada (mude para seu caminho)
+ARQUIVO_EXCEL = r"C:\Users\pm25625\OneDrive - Alliance\PlacasVerdes\registros.xlsx"
+SHEET_NAME = "Planilha1"  # ou o nome da sua aba, geralmente Planilha1 ou como estiver no Excel
+
+def carregar_dados():
+    if os.path.exists(ARQUIVO_EXCEL):
+        return pd.read_excel(ARQUIVO_EXCEL, sheet_name=SHEET_NAME)
+    else:
+        return pd.DataFrame(columns=[
+            "Nome Completo do Solicitante", "Email do Solicitante", "IPN do Solicitante", "Departamento", "Telefone", "Número da CNH", "Validade da CNH",
+            "Local e motivo da utilização", "Nome Completo do Supervisor", "Email do Supervisor",
+            "SV Veículo", "Projeto", "Necessita de cartão GoodCard?",
+            "Utilização com pernoite?", "Previsão de Devolução"
+        ])
+
+def salvar_dados(df):
+    with pd.ExcelWriter(ARQUIVO_EXCEL, engine='openpyxl', mode='w') as writer:
+        df.to_excel(writer, index=False, sheet_name=SHEET_NAME)
+        
+def adicionar_registro(novo_dado):
+    df = carregar_dados()
+    df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
+    salvar_dados(df)
+
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
     page_title="Controle de Empréstimo de Placa Verde",
@@ -44,28 +68,6 @@ try:
     st.sidebar.image(logo, use_container_width=True)
 except Exception as e:
     st.sidebar.write("Erro ao carregar a logo:", e)
-
-
-# ----------------- Funções Auxiliares -----------------
-CSV_FILE = "emprestimos_placa_verde.csv"
-
-def carregar_dados():
-    if os.path.exists(CSV_FILE):
-        return pd.read_csv(CSV_FILE)
-    else:
-        return pd.DataFrame(columns=[
-            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
-            "Motivo", "Previsão Devolução", "Declaração Lida",
-            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
-        ])
-
-def salvar_dados(df):
-    df.to_csv(CSV_FILE, index=False)
-
-def adicionar_registro(novo_dado):
-    df = carregar_dados()
-    df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
-    salvar_dados(df)
 
 # ----------------- Menu lateral -----------------
 menu_opcao = st.sidebar.selectbox("Navegação", ["Formulário de Solicitação", "Registros de Empréstimos"])
@@ -150,34 +152,31 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
         submit = st.form_submit_button("Enviar Solicitação")
 
         if submit:
-            if not all([nome, email, departamento, telefone, cnh, motivo, projeto, sv]):
+            if not all([nome_solicitante, email_solicitante, departamento, telefone, cnh, validade_cnh,  motivo, nome_supervisor, email_supervisor, sv, projeto, goodcard, pernoite, previsao_devolucao]):
                 st.warning("Preencha todos os campos obrigatórios.")
             elif not declaracao:
                 st.warning("Você deve confirmar a leitura da declaração.")
             else:
                 dados = {
-                    "Nome Solicitante": nome_solicitante,
-                    "Email Solicitante": email_solicitante,
-                    "IPN Solicitante": ipn,
+                    "Nome Completo do Solicitante": nome_solicitante,
+                    "Email do Solicitante": email_solicitante,
+                    "IPN do Solicitante": ipn,
                     "Departamento": departamento,
-                    "Telefone Solicitante": telefone,
-                    "Numero cnh": cnh, 
-                    "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
-                    "Nome Supervisor": nome_supervisor,
-                    "Email Supervisor": email_supervisor,
-                    "Motivo": motivo,
-                    "Previsão Devolução": previsao_devolucao.strftime("%d/%m/%Y"),
-                    "Declaração Lida": "SIM",
-                    "GoodCard": goodcard,
+                    "Telefone": telefone,
+                    "Número da CNH": cnh, 
+                    "Validade da CNH": validade_cnh.strftime("%d/%m/%Y"),
+                    "Local e motivo da utilização": motivo,
+                    "Nome Completo do Supervisor": nome_supervisor,
+                    "Email do Supervisor": email_supervisor,
                     "SV Veículo": sv,
-                    "Pernoite": pernoite,
                     "Projeto": projeto,
-                    "Data Registro": datetime.now().strftime("%d/%m/%Y %H:%M")
+                    "Necessita de cartão GoodCard?": goodcard,
+                    "Utilização com pernoite?": pernoite,
+                    "Previsão de Devolução": previsao_devolucao.strftime("%d/%m/%Y")
                 }
                 adicionar_registro(dados)
                 st.success("Solicitação registrada com sucesso.")
 
-# ----------------- Página: Registros -----------------
 # ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
@@ -239,9 +238,9 @@ elif menu_opcao == "Registros de Empréstimos":
 
         # Aplica filtros
         if nome_filtro:
-            df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
+            df = df[df["Nome Completo do Solicitante"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+            df = df[df["SV do Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
         if status_filtro:
             df = df[df["Status"].isin(status_filtro)]
 
@@ -314,3 +313,4 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
             
+
