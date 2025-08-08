@@ -1,4 +1,4 @@
-não! eu quero que da mesma forma que eu fiz nesse codigo que te enviei ai, de integrar ao firebase, você faça nesse: import streamlit as st
+import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
@@ -313,4 +313,5 @@ elif menu_opcao == "Registros de Empréstimos":
             df_editavel["Data Devolução Real"] = pd.to_datetime(df_editavel["Data Devolução Real"], format="%d/%m/%Y", errors='coerce')
 
             salvar_dados(df_editavel)
-             e ai só me diz o passo a passo que tenho que fazer no site do firebase
+             
+
