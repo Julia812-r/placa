@@ -150,7 +150,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
         submit = st.form_submit_button("Enviar Solicitação")
 
         if submit:
-            if not all([nome, email, departamento, telefone, cnh, motivo, projeto, sv]):
+            if not all([nome_solicitante, email_solicitante, ipn, departamento, telefone, cnh, validade_cnh, nome_supervisor, email_supervisor, sv, projeto, goodcard, pernoite, motivo, previsao_devolucao]):
                 st.warning("Preencha todos os campos obrigatórios.")
             elif not declaracao:
                 st.warning("Você deve confirmar a leitura da declaração.")
@@ -314,4 +314,5 @@ elif menu_opcao == "Registros de Empréstimos":
 
             salvar_dados(df_editavel)
              
+
 
