@@ -150,7 +150,6 @@ if menu_opcao == "Formulário de Solicitação":
 
         declaracao = st.checkbox("Li e estou ciente das informações da Resolução Nº 793/94.")
         confirmacao_info = st.checkbox("Confirmo que as informações fornecidas estão corretas.")
-
         submit = st.form_submit_button("Enviar Solicitação")
 
         if submit:
@@ -311,4 +310,5 @@ elif menu_opcao == "Registros de Empréstimos":
             df_editavel["Data Devolução Real"] = pd.to_datetime(df_editavel["Data Devolução Real"], format="%d/%m/%Y", errors='coerce')
             salvar_dados(df_editavel)
             st.success("Alterações salvas no arquivo local CSV.")
+
 
