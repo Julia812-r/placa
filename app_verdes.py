@@ -7,9 +7,11 @@ from urllib.request import urlopen
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-firebase_cred = st.secrets["firebase"]  # já retorna o dicionário correto
+# Firebase credenciais
+firebase_cred = st.secrets["firebase"]  # já retorna um dict com os campos corretos
+
 if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_cred)
+    cred = credentials.Certificate(firebase_cred)  # passa o dict direto
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -193,4 +195,5 @@ elif menu_opcao == "Registros de Empréstimos":
             if "Firestore_ID" in row:
                 atualizar_registro(row["Firestore_ID"], row.to_dict())
         st.success("Registros sincronizados com Firestore.")
+
 
