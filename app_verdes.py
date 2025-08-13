@@ -4,7 +4,11 @@ from datetime import datetime
 from PIL import Image
 from urllib.request import urlopen
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials
+
+cred = credentials.Certificate(st.secrets["firebase"])
+firebase_admin.initialize_app(cred)
+
 
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
@@ -258,3 +262,4 @@ elif menu_opcao == "Registros de Empréstimos":
                 id_doc = row.get("id_doc")
                 if id_doc:
                     atualizar_registro(id_doc, row.drop(labels=["id_doc"]).to_dict())
+
