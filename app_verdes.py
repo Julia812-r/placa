@@ -1,20 +1,19 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
 from PIL import Image
 from urllib.request import urlopen
 import firebase_admin
 from firebase_admin import credentials, firestore
-import json
 
 # ----------------- Inicialização Firebase -----------------
-firebase_cred = json.loads(st.secrets["firebase"]["firebase_json"])
-
+firebase_cred = st.secrets["firebase"]  # Ajuste conforme seu Secret
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_cred)
     firebase_admin.initialize_app(cred)
-
 db = firestore.client()
+
 
 # ----------------- Funções Firestore -----------------
 def adicionar_registro(dado):
@@ -236,3 +235,4 @@ elif menu_opcao == "Registros de Empréstimos":
                 doc_id = df.loc[i, "Firestore_ID"]
                 atualizar_registro(doc_id, row.to_dict())
             st.success("Registros atualizados no Firestore.")
+
