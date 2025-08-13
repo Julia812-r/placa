@@ -1,8 +1,36 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import os
 from PIL import Image
+from urllib.request import urlopen
+import firebase_admin
+from firebase_admin import credentials, firestore
+import json
+
+# ----------------- Inicialização Firebase -----------------
+firebase_cred = json.loads(st.secrets["firebase"]["firebase_json"])
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate(firebase_cred)
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+# ----------------- Funções Firestore -----------------
+def adicionar_registro(dado):
+    db.collection("emprestimos_placa_verde").add(dado)
+
+def buscar_dados():
+    docs = db.collection("emprestimos_placa_verde").stream()
+    registros = []
+    for doc in docs:
+        reg = doc.to_dict()
+        reg["Firestore_ID"] = doc.id  # adiciona ID do Firestore
+        registros.append(reg)
+    return pd.DataFrame(registros)
+
+def atualizar_registro(doc_id, dado_atualizado):
+    db.collection("emprestimos_placa_verde").document(doc_id).set(dado_atualizado)
 
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
@@ -10,7 +38,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS para sidebar preta e título personalizado
 st.markdown("""
     <style>
     .titulo-renault {
@@ -30,14 +57,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Título principal
 st.markdown('<div class="titulo-renault">RENAULT</div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align: center;'>Controle de Empréstimo - Placa Verde</h1>", unsafe_allow_html=True)
 
-# ----------------- Logo na Sidebar -----------------
-from PIL import Image
-from urllib.request import urlopen
-
+# ----------------- Logo Sidebar -----------------
 try:
     logo_url = "https://storage.googleapis.com/ire-74774-ope/files%2Fmigration%2Ftb_releases-5238-604.jpg"
     logo = Image.open(urlopen(logo_url))
@@ -45,70 +68,17 @@ try:
 except Exception as e:
     st.sidebar.write("Erro ao carregar a logo:", e)
 
-
-# ----------------- Funções Auxiliares -----------------
-CSV_FILE = "emprestimos_placa_verde.csv"
-
-def carregar_dados():
-    if os.path.exists(CSV_FILE):
-        return pd.read_csv(CSV_FILE)
-    else:
-        return pd.DataFrame(columns=[
-            "Nome Supervisor", "Email", "Departamento", "Telefone", "CNH", "Validade CNH",
-            "Motivo", "Previsão Devolução", "Declaração Lida",
-            "GoodCard", "SV Veículo", "Pernoite", "Projeto", "Data Registro"
-        ])
-
-def salvar_dados(df):
-    df.to_csv(CSV_FILE, index=False)
-
-def adicionar_registro(novo_dado):
-    df = carregar_dados()
-    df = pd.concat([df, pd.DataFrame([novo_dado])], ignore_index=True)
-    salvar_dados(df)
-
 # ----------------- Menu lateral -----------------
 menu_opcao = st.sidebar.selectbox("Navegação", ["Formulário de Solicitação", "Registros de Empréstimos"])
 
 # ----------------- Página: Formulário -----------------
 if menu_opcao == "Formulário de Solicitação":
     st.subheader("Regras para Utilização da Placa Verde")
-
     with st.expander("Clique para ver as regras de utilização da Placa Verde"):
-        regras_texto = """
-**SITUAÇÃO GEOGRÁFICA:**  
-O Art. 2º da Resolução 793/94 deixa claro que a utilização da placa verde de "FABRICANTE", independerá de horário, situação geográfica ou restrições de qualquer natureza, respeitado o disposto no Art. 4º e seus parágrafos.
-
-**CONDUTORES/OCUPANTES:**  
-O Art. 4º da Resolução 793/94 define que somente podem dirigir ou estar dentro de um veículo com placa verde (mesmo que carona), os colaboradores que estiverem devidamente registrados no DETRAN. Verificar que Técnicos Especializados de empresas prestadoras de serviço também podem conduzir os veículos, desde que atendam ao requisito de registro no DETRAN. É indispensável o correto preenchimento e manutenção constante do registro de utilização das placas verdes (livro preto).
-
-> O processo de registro da documentação (dados e cópia da CNH) dos condutores deve passar pela DE-TV e Frota.  
-> É obrigatório o preenchimento do livro preto que acompanha a placa verde antes da saída da fábrica e no retorno.  
-> O veículo de ensaio é de propriedade da Empresa Renault do Brasil.  
-> Todo uso particular é rigorosamente proibido.  
-> A hierarquia do condutor deverá estar ciente que o mesmo está utilizando o veículo.
-
-**INFORMAÇÕES COMPLEMENTARES**  
-> A placa está sob responsabilidade do condutor principal identificado abaixo.  
-> O documento de licenciamento anual da placa está fixado dentro do livro.  
-> Em caso de perda da placa verde, providenciar imediatamente o Boletim de Ocorrência e avisar à segurança patrimonial, gestão de frota e DE-TV.  
-> Em caso de multa no período de empréstimo da placa, o condutor registrado no livro preto durante a saída do veículo será responsável pelo pagamento e pela pontuação.  
-> O condutor deverá portar crachá da Renault, CNH (carteira de motorista) válida e carteirinha de placa verde.  
-( * ) O período de responsabilidade corresponde a retirada da placa verde até a respectiva devolução.  
-( * ) Devolver a placa verde, livro preto e pasta plástica A0 diretamente ao chefe do atelier DE-TV para cadastro completo da devolução.  
-> O prazo máximo de empréstimo de placa verde é de 4 meses para ensaios de Durabilidade e Pré-OLV/OLO, e 2 meses para os demais clientes. Se necessário a prolongação do empréstimo, o cliente deve devolver a placa atual dentro do prazo estipulado e então fazer uma nova demanda.
-
-/!\\ Em caso de descumprimento das regras e resoluções o colaborador que realizou o empréstimo da placa verde fica totalmente responsável por eventuais consequências de processos ou custos associados.
-
-Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
-"""
-
+        regras_texto = """<SEU TEXTO DE REGRAS AQUI>"""
         st.markdown(regras_texto)
-    
-    st.subheader("Formulário de Solicitação de Empréstimo")
-    
-    # ... segue o seu formulário aqui ...
 
+    st.subheader("Formulário de Solicitação de Empréstimo")
 
     with st.form("form_emprestimo"):
         col1, col2 = st.columns(2)
@@ -132,19 +102,9 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
         previsao_devolucao = st.date_input("Previsão de Devolução", format="DD/MM/YYYY")
 
         with st.expander("Leia as orientações em caso de sinistro"):
-            st.markdown("""
-**Em caso de sinistro, seguir os procedimentos abaixo:**
-
-- Obter dados do terceiro (nome, telefone, endereço, placa, seguradora).  
-- Acionar a **Renault Assistance (0800-0555615)**.  
-- Acompanhar o veículo até a fábrica (Portaria 5).  
-- Providenciar Boletim de Ocorrência.  
-- Comunicar segurança patrimonial, gestão de frota e responsável pela placa verde (CUET DE-TV).
-            """)
+            st.markdown("<TEXTO DE ORIENTAÇÃO DE SINISTRO AQUI>")
 
         declaracao = st.checkbox("Li e estou ciente das informações da Resolução Nº 793/94.")
-
-        # Novo checkbox adicional
         confirmacao_info = st.checkbox("Confirmo que as informações fornecidas estão corretas.")
 
         submit = st.form_submit_button("Enviar Solicitação")
@@ -161,7 +121,7 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                     "IPN Solicitante": ipn,
                     "Departamento": departamento,
                     "Telefone Solicitante": telefone,
-                    "Numero cnh": cnh, 
+                    "Numero CNH": cnh,
                     "Validade CNH": validade_cnh.strftime("%d/%m/%Y"),
                     "Nome Supervisor": nome_supervisor,
                     "Email Supervisor": email_supervisor,
@@ -178,18 +138,12 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
                 st.success("Solicitação registrada com sucesso.")
 
 # ----------------- Página: Registros -----------------
-# ----------------- Página: Registros -----------------
 elif menu_opcao == "Registros de Empréstimos":
     st.subheader("Área Protegida - Registros de Empréstimos")
-
-    # Define a senha correta
     senha_correta = "renault2025"
-
-    # Inicializa o estado de autenticação
     if "autenticado" not in st.session_state:
         st.session_state["autenticado"] = False
 
-    # Se ainda não autenticado, pede a senha
     if not st.session_state["autenticado"]:
         senha_entrada = st.text_input("🔐 Digite a senha para acessar os registros:", type="password")
         if senha_entrada == senha_correta:
@@ -200,26 +154,25 @@ elif menu_opcao == "Registros de Empréstimos":
         else:
             st.info("Digite a senha para visualizar os registros.")
 
-    # Se autenticado, exibe os dados
     if st.session_state["autenticado"]:
-        df = carregar_dados()
+        df = buscar_dados()
 
         # Adiciona colunas se não existirem
-        if "Placa" not in df.columns:
-            df["Placa"] = ""
-        if "Data Devolução Real" not in df.columns:
-            df["Data Devolução Real"] = ""
+        for col in ["Placa", "Data Devolução Real"]:
+            if col not in df.columns:
+                df[col] = ""
 
-        # Converte datas para datetime
-        df["Previsão Devolução"] = pd.to_datetime(df["Previsão Devolução"], dayfirst=True, errors='coerce')
-        df["Data Devolução Real"] = pd.to_datetime(df["Data Devolução Real"], dayfirst=True, errors='coerce')
+        # Converte datas
+        for col in ["Previsão Devolução", "Data Devolução Real"]:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
 
-        # Define status
+        # Status
         def calcular_status(row):
             hoje = datetime.now().date()
-            if pd.notnull(row["Data Devolução Real"]):
+            if pd.notnull(row.get("Data Devolução Real")):
                 return "Devolvido"
-            elif pd.notnull(row["Previsão Devolução"]) and hoje > row["Previsão Devolução"].date():
+            elif pd.notnull(row.get("Previsão Devolução")) and hoje > row["Previsão Devolução"].date():
                 return "Atrasado"
             else:
                 return "Em aberto"
@@ -227,77 +180,48 @@ elif menu_opcao == "Registros de Empréstimos":
         df["Status"] = df.apply(calcular_status, axis=1)
 
         # Filtros
-        with st.container():
-            col1, col2, col3 = st.columns([3, 3, 2])
-            with col1:
-                nome_filtro = st.text_input("Filtrar por Nome do Solicitante")
-            with col2:
-                sv_filtro = st.text_input("Filtrar por SV do Veículo")
-            with col3:
-                status_opcoes = df["Status"].unique().tolist()
-                status_filtro = st.multiselect("Filtrar por Status", options=status_opcoes, default=status_opcoes)
+        col1, col2, col3 = st.columns([3,3,2])
+        with col1:
+            nome_filtro = st.text_input("Filtrar por Nome do Solicitante")
+        with col2:
+            sv_filtro = st.text_input("Filtrar por SV do Veículo")
+        with col3:
+            status_opcoes = df["Status"].unique().tolist() if not df.empty else []
+            status_filtro = st.multiselect("Filtrar por Status", options=status_opcoes, default=status_opcoes)
 
-        # Aplica filtros
         if nome_filtro:
             df = df[df["Nome Supervisor"].astype(str).str.contains(nome_filtro, case=False, na=False)]
         if sv_filtro:
-            df = df[df["SV Veículo"].fillna("").astype(str).str.contains(sv_filtro, case=False, na=False)]
+            df = df[df["SV Veículo"].astype(str).str.contains(sv_filtro, case=False, na=False)]
         if status_filtro:
             df = df[df["Status"].isin(status_filtro)]
 
-        # Prepara DataFrame para exibição/editável
+        # Prepara para edição
         df_exibicao = df.copy()
-
-        # Garante que colunas texto sejam strings e datas formatadas em string
         colunas_texto = [
-            "Nome Solicitante", "Email Solicitante", "Departamento", "IPN Solicitante", "Telefone", "CNH", "Validade CNH", "Nome Supervisor", "Email Supervisor",
+            "Nome Solicitante", "Email Solicitante", "Departamento", "IPN Solicitante",
+            "Telefone", "Numero CNH", "Validade CNH", "Nome Supervisor", "Email Supervisor",
             "Motivo", "GoodCard", "SV Veículo", "Placa", "Pernoite", "Projeto", "Data Registro"
         ]
-
         for col in colunas_texto:
             if col in df_exibicao.columns:
                 df_exibicao[col] = df_exibicao[col].fillna("").astype(str)
 
-        # Formata as datas para string no formato DD/MM/YYYY para facilitar edição
-        df_exibicao["Previsão Devolução"] = df_exibicao["Previsão Devolução"].dt.strftime("%d/%m/%Y").fillna("")
-        df_exibicao["Data Devolução Real"] = df_exibicao["Data Devolução Real"].dt.strftime("%d/%m/%Y").fillna("")
+        for col in ["Previsão Devolução", "Data Devolução Real"]:
+            if col in df_exibicao.columns:
+                df_exibicao[col] = df_exibicao[col].dt.strftime("%d/%m/%Y").fillna("")
 
-        # Reordena colunas para exibição
         ordem_colunas = [
-            "Status",
-            "Previsão Devolução",
-            "Data Devolução Real",
-            "Nome Solicitante",
-            "Email Solicitante",
-            "Departamento",
-            "IPN Solicitante",
-            "Telefone",
-            "CNH",
-            "Validade CNH",
-            "Nome Supervisor",
-            "Email Supervisor",
-            "Motivo",
-            "GoodCard",
-            "SV Veículo",
-            "Placa",
-            "Pernoite",
-            "Projeto",
-            "Data Registro",
+            "Status","Previsão Devolução","Data Devolução Real","Nome Solicitante","Email Solicitante",
+            "Departamento","IPN Solicitante","Telefone","Numero CNH","Validade CNH","Nome Supervisor",
+            "Email Supervisor","Motivo","GoodCard","SV Veículo","Placa","Pernoite","Projeto","Data Registro"
         ]
-
-
         for col in ordem_colunas:
             if col not in df_exibicao.columns:
-                if col == "Status":
-                    df_exibicao[col] = df.apply(calcular_status, axis=1)
-                else:
-                    df_exibicao[col] = ""
-
-
+                df_exibicao[col] = ""
 
         df_exibicao = df_exibicao[ordem_colunas]
 
-        # Exibe o editor de dados
         df_editavel = st.data_editor(
             df_exibicao,
             num_rows="dynamic",
@@ -306,12 +230,9 @@ elif menu_opcao == "Registros de Empréstimos":
             disabled=["Status"],
         )
 
-        # Se houver mudanças, salva os dados
+        # Atualiza Firestore se houver mudanças
         if not df_editavel.equals(df_exibicao):
-            # Antes de salvar, converte datas de volta para datetime para manter padrão no CSV
-            df_editavel["Previsão Devolução"] = pd.to_datetime(df_editavel["Previsão Devolução"], format="%d/%m/%Y", errors='coerce')
-            df_editavel["Data Devolução Real"] = pd.to_datetime(df_editavel["Data Devolução Real"], format="%d/%m/%Y", errors='coerce')
-
-            salvar_dados(df_editavel)
-             
-
+            for i, row in df_editavel.iterrows():
+                doc_id = df.loc[i, "Firestore_ID"]
+                atualizar_registro(doc_id, row.to_dict())
+            st.success("Registros atualizados no Firestore.")
