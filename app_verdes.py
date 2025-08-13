@@ -4,11 +4,15 @@ from datetime import datetime
 from PIL import Image
 from urllib.request import urlopen
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, firestore
 
-cred = credentials.Certificate(st.secrets["firebase"])
-firebase_admin.initialize_app(cred)
+# ----------------- Inicialização do Firebase -----------------
+if not firebase_admin._apps:
+    cred = credentials.Certificate(st.secrets["firebase"])
+    firebase_admin.initialize_app(cred)
 
+db = firestore.client()
+COLECAO = "emprestimos_placa_verde"
 
 # ----------------- Configurações Iniciais -----------------
 st.set_page_config(
@@ -47,13 +51,6 @@ try:
 except Exception as e:
     st.sidebar.write("Erro ao carregar a logo:", e)
 
-# ----------------- Configuração do Firestore -----------------
-if not firebase_admin._apps:
-    cred = credentials.Certificate(st.secrets["FIREBASE"])
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
-COLECAO = "emprestimos_placa_verde"
-
 # ----------------- Funções Firestore -----------------
 def carregar_dados():
     docs = db.collection(COLECAO).stream()
@@ -86,24 +83,7 @@ menu_opcao = st.sidebar.selectbox("Navegação", ["Formulário de Solicitação"
 if menu_opcao == "Formulário de Solicitação":
     st.subheader("Regras para Utilização da Placa Verde")
     with st.expander("Clique para ver as regras de utilização da Placa Verde"):
-        regras_texto = """
-**SITUAÇÃO GEOGRÁFICA:**  
-O Art. 2º da Resolução 793/94 deixa claro que a utilização da placa verde de "FABRICANTE", independerá de horário, situação geográfica ou restrições de qualquer natureza, respeitado o disposto no Art. 4º e seus parágrafos.
-
-**CONDUTORES/OCUPANTES:**  
-O Art. 4º da Resolução 793/94 define que somente podem dirigir ou estar dentro de um veículo com placa verde (mesmo que carona), os colaboradores que estiverem devidamente registrados no DETRAN.
-
-> O processo de registro da documentação (dados e cópia da CNH) dos condutores deve passar pela DE-TV e Frota.  
-> É obrigatório o preenchimento do livro preto que acompanha a placa verde antes da saída da fábrica e no retorno.
-
-**INFORMAÇÕES COMPLEMENTARES**  
-> A placa está sob responsabilidade do condutor principal identificado abaixo.  
-> O documento de licenciamento anual da placa está fixado dentro do livro.  
-> Em caso de perda da placa verde, providenciar imediatamente o Boletim de Ocorrência e avisar à segurança patrimonial, gestão de frota e DE-TV.  
-> O prazo máximo de empréstimo é de 4 meses para ensaios de Durabilidade e Pré-OLV/OLO, e 2 meses para os demais clientes.
-
-Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
-"""
+        regras_texto = """[Seu texto de regras aqui...]"""
         st.markdown(regras_texto)
     
     st.subheader("Formulário de Solicitação de Empréstimo")
@@ -128,10 +108,8 @@ Responsável pelas placas verdes DE-TV -> CUET Fabio Marques
 
         motivo = st.text_area("Local e motivo da utilização")
         previsao_devolucao = st.date_input("Previsão de Devolução")
-
         declaracao = st.checkbox("Li e estou ciente das informações da Resolução Nº 793/94.")
         confirmacao_info = st.checkbox("Confirmo que as informações fornecidas estão corretas.")
-
         submit = st.form_submit_button("Enviar Solicitação")
 
         if submit:
@@ -185,7 +163,7 @@ elif menu_opcao == "Registros de Empréstimos":
 
     if st.session_state["autenticado"]:
         df = carregar_dados()
-
+        
         # Adiciona colunas se não existirem
         for col in ["Placa", "Data Devolução Real"]:
             if col not in df.columns:
