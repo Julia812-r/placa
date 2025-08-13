@@ -6,6 +6,11 @@ from PIL import Image
 from urllib.request import urlopen
 import firebase_admin
 from firebase_admin import credentials, firestore
+import json
+
+firebase_cred = json.loads(st.secrets["firebase"]["firebase_json"])
+cred = credentials.Certificate(firebase_cred)
+
 
 # Firebase credenciais
 firebase_cred = st.secrets["firebase"]  # já retorna um dict com os campos corretos
@@ -195,5 +200,6 @@ elif menu_opcao == "Registros de Empréstimos":
             if "Firestore_ID" in row:
                 atualizar_registro(row["Firestore_ID"], row.to_dict())
         st.success("Registros sincronizados com Firestore.")
+
 
 
