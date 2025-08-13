@@ -1,8 +1,1 @@
-streamlit-aggrid
-openpyxl
-streamlit
-pandas
 firebase-admin
-Pillow
-
-
